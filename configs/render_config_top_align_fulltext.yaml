@@ -1,0 +1,195 @@
+seed: 20260326
+parallel_workers: 6
+num_rounds: 1
+samples_per_round: 50
+shared_color_palette_json: ./web_standard_colors.json
+
+canvas:
+  width: 2048
+  height: 2048
+  min_width: 2048
+  max_width: 3072
+  min_height: 2048
+  max_height: 3072
+  short_edge_min: 2048
+  short_edge_max: 3072
+  aspect_ratios:
+    - "1:1"
+    - "2:3"
+    - "3:2"
+    - "3:4"
+    - "4:3"
+    - "9:16"
+    - "16:9"
+  margin: 72
+  min_text_bg_contrast_ratio: 4.0
+  background_colors:
+    - "#000000"
+    - "#FFFFFF"
+    - "#808080"
+    - "#C0C0C0"
+    - "#800000"
+    - "#FF0000"
+    - "#800080"
+    - "#FF00FF"
+    - "#008000"
+    - "#00FF00"
+    - "#808000"
+    - "#FFFF00"
+    - "#000080"
+    - "#0000FF"
+    - "#008080"
+    - "#00FFFF"
+    - "#111111"
+    - "#203040"
+    - "#0F172A"
+    - "#1F2937"
+    - "#312E81"
+    - "#0B3D2E"
+    - "#4A044E"
+    - "#7C2D12"
+    - "#2D1B69"
+    - "#003049"
+    - "#F8FAFC"
+    - "#FFF7ED"
+    - "#FDF2F8"
+    - "#F0F9FF"
+    - "#ECFDF5"
+    - "#FFFBEB"
+    - "#F5F3FF"
+
+text:
+  max_font_size: 100
+  min_font_size: 50
+  line_spacing: 10
+  paragraph_spacing: 84
+  min_segments_per_image: 1
+  max_segments_per_image: 8
+  min_corpus_units_per_segment: 2
+  max_corpus_units_per_segment: 6
+  emoji_insert_probability: 0.5
+  min_emojis_between_segments: 0
+  max_emojis_between_segments: 3
+  layout_modes:
+    - full_text
+  layout_mode_weights:
+    full_text: 1.0
+  layout_variants_by_mode:
+    full_text:
+      - top_left
+      - top_center
+      - top_right
+  default_text_colors:
+    - "#000000"
+    - "#FFFFFF"
+    - "#808080"
+    - "#C0C0C0"
+    - "#800000"
+    - "#FF0000"
+    - "#800080"
+    - "#FF00FF"
+    - "#008000"
+    - "#00FF00"
+    - "#808000"
+    - "#FFFF00"
+    - "#000080"
+    - "#0000FF"
+    - "#008080"
+    - "#00FFFF"
+    - "#F5F5F5"
+    - "#101010"
+    - "#FFD54F"
+    - "#80DEEA"
+    - "#EF4444"
+    - "#F97316"
+    - "#22C55E"
+    - "#14B8A6"
+    - "#3B82F6"
+    - "#8B5CF6"
+    - "#EC4899"
+    - "#EAB308"
+    - "#F43F5E"
+    - "#0EA5E9"
+
+output:
+  root_dir: ../output_top_align_fulltext
+  image_dir: images
+  parquet_dir: parquet
+
+corpus_sources:
+  - path: ../sample_data/chinese_gb_8105.jsonl
+    corpus_type: chinese
+    sample_weight: 10.0
+  - path: ../sample_data/chinese_xinhua_words.jsonl
+    corpus_type: chinese
+    sample_weight: 10.0
+  - path: ../sample_data/chinese_news_simplified_github_300k.jsonl
+    corpus_type: chinese
+    sample_weight: 0.2
+  - path: ../sample_data/chinese_continuous_github_300k.jsonl
+    corpus_type: chinese
+    sample_weight: 1
+  - path: ../sample_data/english_common_5000.jsonl
+    corpus_type: english
+    sample_weight: 10
+  - path: ../sample_data/english_continuous_github_300k.jsonl
+    corpus_type: english
+    sample_weight: 1.0
+
+font_category: simple
+fonts_by_corpus_by_category:
+  simple:
+    chinese:
+      - "../font/common/NotoSansSC.ttf"
+      - "../font/common/NotoSerifSC.ttf"
+      - "../font/common/ZCOOLXiaoWei.ttf"
+    english:
+      - "../font/common/Roboto.ttf"
+      - "../font/common/OpenSans.ttf"
+      - "../font/common/Lato.ttf"
+      - "../font/common/Inter.ttf"
+      - "../font/common/Merriweather.ttf"
+    emoji:
+      - "/System/Library/Fonts/Apple Color Emoji.ttc"
+    line_break:
+      - "../font/common/Roboto.ttf"
+
+colors_by_corpus:
+  chinese:
+    - "#FFCC80"
+    - "#FFE082"
+    - "#FCA5A5"
+    - "#FDBA74"
+    - "#FDE68A"
+    - "#86EFAC"
+    - "#67E8F9"
+    - "#93C5FD"
+    - "#C4B5FD"
+    - "#F9A8D4"
+    - "#FB7185"
+    - "#2DD4BF"
+    - "#FACC15"
+    - "#A7F3D0"
+    - "#F5D0FE"
+  english:
+    - "#81D4FA"
+    - "#B3E5FC"
+    - "#60A5FA"
+    - "#34D399"
+    - "#F59E0B"
+    - "#A78BFA"
+    - "#F472B6"
+    - "#22D3EE"
+    - "#F87171"
+    - "#38BDF8"
+    - "#4ADE80"
+    - "#FBBF24"
+    - "#C084FC"
+    - "#FB7185"
+    - "#99F6E4"
+  emoji:
+    - "#FFFFFF"
+    - "#F8FAFC"
+    - "#E2E8F0"
+  line_break:
+    - "#FFFFFF"

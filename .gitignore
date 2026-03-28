@@ -1,0 +1,36 @@
+# Fonts (local large assets)
+font/
+fonts/
+**/*.ttf
+**/*.ttc
+**/*.otf
+**/*.woff
+**/*.woff2
+
+# Corpus / datasets
+sample_data/
+data/
+datasets/
+corpus/
+
+# Generated outputs
+output/
+output_title_subtitle/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Images
+**/*.png
+
+# Parquet
+**/*.parquet
+
+# macOS
+.DS_Store
+
+# Logs
+**/*.log

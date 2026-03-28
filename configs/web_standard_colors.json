@@ -1,0 +1,1487 @@
+{
+  "palette_name": "css_named_colors_full",
+  "description": "Full CSS named colors (including gray/grey aliases) with hex, rgb, English and Chinese names.",
+  "count": 148,
+  "colors": [
+    {
+      "name_en": "aliceblue",
+      "name_zh": "爱丽丝蓝",
+      "hex": "#F0F8FF",
+      "rgb": [
+        240,
+        248,
+        255
+      ]
+    },
+    {
+      "name_en": "antiquewhite",
+      "name_zh": "古董白",
+      "hex": "#FAEBD7",
+      "rgb": [
+        250,
+        235,
+        215
+      ]
+    },
+    {
+      "name_en": "aqua",
+      "name_zh": "水绿色",
+      "hex": "#00FFFF",
+      "rgb": [
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "name_en": "aquamarine",
+      "name_zh": "碧绿色",
+      "hex": "#7FFFD4",
+      "rgb": [
+        127,
+        255,
+        212
+      ]
+    },
+    {
+      "name_en": "azure",
+      "name_zh": "蔚蓝色",
+      "hex": "#F0FFFF",
+      "rgb": [
+        240,
+        255,
+        255
+      ]
+    },
+    {
+      "name_en": "beige",
+      "name_zh": "米色",
+      "hex": "#F5F5DC",
+      "rgb": [
+        245,
+        245,
+        220
+      ]
+    },
+    {
+      "name_en": "bisque",
+      "name_zh": "乳脂色",
+      "hex": "#FFE4C4",
+      "rgb": [
+        255,
+        228,
+        196
+      ]
+    },
+    {
+      "name_en": "black",
+      "name_zh": "黑色",
+      "hex": "#000000",
+      "rgb": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name_en": "blanchedalmond",
+      "name_zh": "杏仁白",
+      "hex": "#FFEBCD",
+      "rgb": [
+        255,
+        235,
+        205
+      ]
+    },
+    {
+      "name_en": "blue",
+      "name_zh": "蓝色",
+      "hex": "#0000FF",
+      "rgb": [
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "name_en": "blueviolet",
+      "name_zh": "蓝紫色",
+      "hex": "#8A2BE2",
+      "rgb": [
+        138,
+        43,
+        226
+      ]
+    },
+    {
+      "name_en": "brown",
+      "name_zh": "棕色",
+      "hex": "#A52A2A",
+      "rgb": [
+        165,
+        42,
+        42
+      ]
+    },
+    {
+      "name_en": "burlywood",
+      "name_zh": "硬木色",
+      "hex": "#DEB887",
+      "rgb": [
+        222,
+        184,
+        135
+      ]
+    },
+    {
+      "name_en": "cadetblue",
+      "name_zh": "军校蓝",
+      "hex": "#5F9EA0",
+      "rgb": [
+        95,
+        158,
+        160
+      ]
+    },
+    {
+      "name_en": "chartreuse",
+      "name_zh": "查特酒绿",
+      "hex": "#7FFF00",
+      "rgb": [
+        127,
+        255,
+        0
+      ]
+    },
+    {
+      "name_en": "chocolate",
+      "name_zh": "巧克力色",
+      "hex": "#D2691E",
+      "rgb": [
+        210,
+        105,
+        30
+      ]
+    },
+    {
+      "name_en": "coral",
+      "name_zh": "珊瑚色",
+      "hex": "#FF7F50",
+      "rgb": [
+        255,
+        127,
+        80
+      ]
+    },
+    {
+      "name_en": "cornflowerblue",
+      "name_zh": "矢车菊蓝",
+      "hex": "#6495ED",
+      "rgb": [
+        100,
+        149,
+        237
+      ]
+    },
+    {
+      "name_en": "cornsilk",
+      "name_zh": "玉米丝色",
+      "hex": "#FFF8DC",
+      "rgb": [
+        255,
+        248,
+        220
+      ]
+    },
+    {
+      "name_en": "crimson",
+      "name_zh": "绯红",
+      "hex": "#DC143C",
+      "rgb": [
+        220,
+        20,
+        60
+      ]
+    },
+    {
+      "name_en": "cyan",
+      "name_zh": "青色",
+      "hex": "#00FFFF",
+      "rgb": [
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "name_en": "darkblue",
+      "name_zh": "深蓝色",
+      "hex": "#00008B",
+      "rgb": [
+        0,
+        0,
+        139
+      ]
+    },
+    {
+      "name_en": "darkcyan",
+      "name_zh": "深青色",
+      "hex": "#008B8B",
+      "rgb": [
+        0,
+        139,
+        139
+      ]
+    },
+    {
+      "name_en": "darkgoldenrod",
+      "name_zh": "深金菊色",
+      "hex": "#B8860B",
+      "rgb": [
+        184,
+        134,
+        11
+      ]
+    },
+    {
+      "name_en": "darkgray",
+      "name_zh": "深灰色",
+      "hex": "#A9A9A9",
+      "rgb": [
+        169,
+        169,
+        169
+      ]
+    },
+    {
+      "name_en": "darkgreen",
+      "name_zh": "深绿色",
+      "hex": "#006400",
+      "rgb": [
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "name_en": "darkgrey",
+      "name_zh": "深灰色",
+      "hex": "#A9A9A9",
+      "rgb": [
+        169,
+        169,
+        169
+      ]
+    },
+    {
+      "name_en": "darkkhaki",
+      "name_zh": "深卡其色",
+      "hex": "#BDB76B",
+      "rgb": [
+        189,
+        183,
+        107
+      ]
+    },
+    {
+      "name_en": "darkmagenta",
+      "name_zh": "深洋红",
+      "hex": "#8B008B",
+      "rgb": [
+        139,
+        0,
+        139
+      ]
+    },
+    {
+      "name_en": "darkolivegreen",
+      "name_zh": "深橄榄绿",
+      "hex": "#556B2F",
+      "rgb": [
+        85,
+        107,
+        47
+      ]
+    },
+    {
+      "name_en": "darkorange",
+      "name_zh": "深橙色",
+      "hex": "#FF8C00",
+      "rgb": [
+        255,
+        140,
+        0
+      ]
+    },
+    {
+      "name_en": "darkorchid",
+      "name_zh": "深兰花紫",
+      "hex": "#9932CC",
+      "rgb": [
+        153,
+        50,
+        204
+      ]
+    },
+    {
+      "name_en": "darkred",
+      "name_zh": "深红色",
+      "hex": "#8B0000",
+      "rgb": [
+        139,
+        0,
+        0
+      ]
+    },
+    {
+      "name_en": "darksalmon",
+      "name_zh": "深鲑红",
+      "hex": "#E9967A",
+      "rgb": [
+        233,
+        150,
+        122
+      ]
+    },
+    {
+      "name_en": "darkseagreen",
+      "name_zh": "深海绿色",
+      "hex": "#8FBC8F",
+      "rgb": [
+        143,
+        188,
+        143
+      ]
+    },
+    {
+      "name_en": "darkslateblue",
+      "name_zh": "深石板蓝",
+      "hex": "#483D8B",
+      "rgb": [
+        72,
+        61,
+        139
+      ]
+    },
+    {
+      "name_en": "darkslategray",
+      "name_zh": "深石板灰",
+      "hex": "#2F4F4F",
+      "rgb": [
+        47,
+        79,
+        79
+      ]
+    },
+    {
+      "name_en": "darkslategrey",
+      "name_zh": "深石板灰",
+      "hex": "#2F4F4F",
+      "rgb": [
+        47,
+        79,
+        79
+      ]
+    },
+    {
+      "name_en": "darkturquoise",
+      "name_zh": "深绿松石",
+      "hex": "#00CED1",
+      "rgb": [
+        0,
+        206,
+        209
+      ]
+    },
+    {
+      "name_en": "darkviolet",
+      "name_zh": "深紫罗兰",
+      "hex": "#9400D3",
+      "rgb": [
+        148,
+        0,
+        211
+      ]
+    },
+    {
+      "name_en": "deeppink",
+      "name_zh": "深粉色",
+      "hex": "#FF1493",
+      "rgb": [
+        255,
+        20,
+        147
+      ]
+    },
+    {
+      "name_en": "deepskyblue",
+      "name_zh": "深天蓝",
+      "hex": "#00BFFF",
+      "rgb": [
+        0,
+        191,
+        255
+      ]
+    },
+    {
+      "name_en": "dimgray",
+      "name_zh": "暗灰色",
+      "hex": "#696969",
+      "rgb": [
+        105,
+        105,
+        105
+      ]
+    },
+    {
+      "name_en": "dimgrey",
+      "name_zh": "暗灰色",
+      "hex": "#696969",
+      "rgb": [
+        105,
+        105,
+        105
+      ]
+    },
+    {
+      "name_en": "dodgerblue",
+      "name_zh": "道奇蓝",
+      "hex": "#1E90FF",
+      "rgb": [
+        30,
+        144,
+        255
+      ]
+    },
+    {
+      "name_en": "firebrick",
+      "name_zh": "砖红色",
+      "hex": "#B22222",
+      "rgb": [
+        178,
+        34,
+        34
+      ]
+    },
+    {
+      "name_en": "floralwhite",
+      "name_zh": "花卉白",
+      "hex": "#FFFAF0",
+      "rgb": [
+        255,
+        250,
+        240
+      ]
+    },
+    {
+      "name_en": "forestgreen",
+      "name_zh": "森林绿",
+      "hex": "#228B22",
+      "rgb": [
+        34,
+        139,
+        34
+      ]
+    },
+    {
+      "name_en": "fuchsia",
+      "name_zh": "紫红色",
+      "hex": "#FF00FF",
+      "rgb": [
+        255,
+        0,
+        255
+      ]
+    },
+    {
+      "name_en": "gainsboro",
+      "name_zh": "庚斯博罗灰",
+      "hex": "#DCDCDC",
+      "rgb": [
+        220,
+        220,
+        220
+      ]
+    },
+    {
+      "name_en": "ghostwhite",
+      "name_zh": "幽灵白",
+      "hex": "#F8F8FF",
+      "rgb": [
+        248,
+        248,
+        255
+      ]
+    },
+    {
+      "name_en": "gold",
+      "name_zh": "金色",
+      "hex": "#FFD700",
+      "rgb": [
+        255,
+        215,
+        0
+      ]
+    },
+    {
+      "name_en": "goldenrod",
+      "name_zh": "金菊色",
+      "hex": "#DAA520",
+      "rgb": [
+        218,
+        165,
+        32
+      ]
+    },
+    {
+      "name_en": "gray",
+      "name_zh": "灰色",
+      "hex": "#808080",
+      "rgb": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "name_en": "green",
+      "name_zh": "绿色",
+      "hex": "#008000",
+      "rgb": [
+        0,
+        128,
+        0
+      ]
+    },
+    {
+      "name_en": "greenyellow",
+      "name_zh": "黄绿色",
+      "hex": "#ADFF2F",
+      "rgb": [
+        173,
+        255,
+        47
+      ]
+    },
+    {
+      "name_en": "grey",
+      "name_zh": "灰色",
+      "hex": "#808080",
+      "rgb": [
+        128,
+        128,
+        128
+      ]
+    },
+    {
+      "name_en": "honeydew",
+      "name_zh": "蜜瓜色",
+      "hex": "#F0FFF0",
+      "rgb": [
+        240,
+        255,
+        240
+      ]
+    },
+    {
+      "name_en": "hotpink",
+      "name_zh": "亮粉色",
+      "hex": "#FF69B4",
+      "rgb": [
+        255,
+        105,
+        180
+      ]
+    },
+    {
+      "name_en": "indianred",
+      "name_zh": "印第安红",
+      "hex": "#CD5C5C",
+      "rgb": [
+        205,
+        92,
+        92
+      ]
+    },
+    {
+      "name_en": "indigo",
+      "name_zh": "靛青",
+      "hex": "#4B0082",
+      "rgb": [
+        75,
+        0,
+        130
+      ]
+    },
+    {
+      "name_en": "ivory",
+      "name_zh": "象牙白",
+      "hex": "#FFFFF0",
+      "rgb": [
+        255,
+        255,
+        240
+      ]
+    },
+    {
+      "name_en": "khaki",
+      "name_zh": "卡其色",
+      "hex": "#F0E68C",
+      "rgb": [
+        240,
+        230,
+        140
+      ]
+    },
+    {
+      "name_en": "lavender",
+      "name_zh": "薰衣草色",
+      "hex": "#E6E6FA",
+      "rgb": [
+        230,
+        230,
+        250
+      ]
+    },
+    {
+      "name_en": "lavenderblush",
+      "name_zh": "淡紫红",
+      "hex": "#FFF0F5",
+      "rgb": [
+        255,
+        240,
+        245
+      ]
+    },
+    {
+      "name_en": "lawngreen",
+      "name_zh": "草坪绿",
+      "hex": "#7CFC00",
+      "rgb": [
+        124,
+        252,
+        0
+      ]
+    },
+    {
+      "name_en": "lemonchiffon",
+      "name_zh": "柠檬绸",
+      "hex": "#FFFACD",
+      "rgb": [
+        255,
+        250,
+        205
+      ]
+    },
+    {
+      "name_en": "lightblue",
+      "name_zh": "浅蓝色",
+      "hex": "#ADD8E6",
+      "rgb": [
+        173,
+        216,
+        230
+      ]
+    },
+    {
+      "name_en": "lightcoral",
+      "name_zh": "浅珊瑚色",
+      "hex": "#F08080",
+      "rgb": [
+        240,
+        128,
+        128
+      ]
+    },
+    {
+      "name_en": "lightcyan",
+      "name_zh": "浅青色",
+      "hex": "#E0FFFF",
+      "rgb": [
+        224,
+        255,
+        255
+      ]
+    },
+    {
+      "name_en": "lightgoldenrodyellow",
+      "name_zh": "浅金菊黄",
+      "hex": "#FAFAD2",
+      "rgb": [
+        250,
+        250,
+        210
+      ]
+    },
+    {
+      "name_en": "lightgray",
+      "name_zh": "浅灰色",
+      "hex": "#D3D3D3",
+      "rgb": [
+        211,
+        211,
+        211
+      ]
+    },
+    {
+      "name_en": "lightgreen",
+      "name_zh": "浅绿色",
+      "hex": "#90EE90",
+      "rgb": [
+        144,
+        238,
+        144
+      ]
+    },
+    {
+      "name_en": "lightgrey",
+      "name_zh": "浅灰色",
+      "hex": "#D3D3D3",
+      "rgb": [
+        211,
+        211,
+        211
+      ]
+    },
+    {
+      "name_en": "lightpink",
+      "name_zh": "浅粉色",
+      "hex": "#FFB6C1",
+      "rgb": [
+        255,
+        182,
+        193
+      ]
+    },
+    {
+      "name_en": "lightsalmon",
+      "name_zh": "浅鲑红",
+      "hex": "#FFA07A",
+      "rgb": [
+        255,
+        160,
+        122
+      ]
+    },
+    {
+      "name_en": "lightseagreen",
+      "name_zh": "浅海绿",
+      "hex": "#20B2AA",
+      "rgb": [
+        32,
+        178,
+        170
+      ]
+    },
+    {
+      "name_en": "lightskyblue",
+      "name_zh": "浅天蓝",
+      "hex": "#87CEFA",
+      "rgb": [
+        135,
+        206,
+        250
+      ]
+    },
+    {
+      "name_en": "lightslategray",
+      "name_zh": "浅石板灰",
+      "hex": "#778899",
+      "rgb": [
+        119,
+        136,
+        153
+      ]
+    },
+    {
+      "name_en": "lightslategrey",
+      "name_zh": "浅石板灰",
+      "hex": "#778899",
+      "rgb": [
+        119,
+        136,
+        153
+      ]
+    },
+    {
+      "name_en": "lightsteelblue",
+      "name_zh": "浅钢蓝",
+      "hex": "#B0C4DE",
+      "rgb": [
+        176,
+        196,
+        222
+      ]
+    },
+    {
+      "name_en": "lightyellow",
+      "name_zh": "浅黄色",
+      "hex": "#FFFFE0",
+      "rgb": [
+        255,
+        255,
+        224
+      ]
+    },
+    {
+      "name_en": "lime",
+      "name_zh": "亮绿色",
+      "hex": "#00FF00",
+      "rgb": [
+        0,
+        255,
+        0
+      ]
+    },
+    {
+      "name_en": "limegreen",
+      "name_zh": "酸橙绿",
+      "hex": "#32CD32",
+      "rgb": [
+        50,
+        205,
+        50
+      ]
+    },
+    {
+      "name_en": "linen",
+      "name_zh": "亚麻色",
+      "hex": "#FAF0E6",
+      "rgb": [
+        250,
+        240,
+        230
+      ]
+    },
+    {
+      "name_en": "magenta",
+      "name_zh": "洋红",
+      "hex": "#FF00FF",
+      "rgb": [
+        255,
+        0,
+        255
+      ]
+    },
+    {
+      "name_en": "maroon",
+      "name_zh": "栗色",
+      "hex": "#800000",
+      "rgb": [
+        128,
+        0,
+        0
+      ]
+    },
+    {
+      "name_en": "mediumaquamarine",
+      "name_zh": "中等碧绿色",
+      "hex": "#66CDAA",
+      "rgb": [
+        102,
+        205,
+        170
+      ]
+    },
+    {
+      "name_en": "mediumblue",
+      "name_zh": "中蓝色",
+      "hex": "#0000CD",
+      "rgb": [
+        0,
+        0,
+        205
+      ]
+    },
+    {
+      "name_en": "mediumorchid",
+      "name_zh": "中兰花紫",
+      "hex": "#BA55D3",
+      "rgb": [
+        186,
+        85,
+        211
+      ]
+    },
+    {
+      "name_en": "mediumpurple",
+      "name_zh": "中紫色",
+      "hex": "#9370DB",
+      "rgb": [
+        147,
+        112,
+        219
+      ]
+    },
+    {
+      "name_en": "mediumseagreen",
+      "name_zh": "中海绿色",
+      "hex": "#3CB371",
+      "rgb": [
+        60,
+        179,
+        113
+      ]
+    },
+    {
+      "name_en": "mediumslateblue",
+      "name_zh": "中石板蓝",
+      "hex": "#7B68EE",
+      "rgb": [
+        123,
+        104,
+        238
+      ]
+    },
+    {
+      "name_en": "mediumspringgreen",
+      "name_zh": "中春绿色",
+      "hex": "#00FA9A",
+      "rgb": [
+        0,
+        250,
+        154
+      ]
+    },
+    {
+      "name_en": "mediumturquoise",
+      "name_zh": "中绿松石",
+      "hex": "#48D1CC",
+      "rgb": [
+        72,
+        209,
+        204
+      ]
+    },
+    {
+      "name_en": "mediumvioletred",
+      "name_zh": "中紫罗兰红",
+      "hex": "#C71585",
+      "rgb": [
+        199,
+        21,
+        133
+      ]
+    },
+    {
+      "name_en": "midnightblue",
+      "name_zh": "午夜蓝",
+      "hex": "#191970",
+      "rgb": [
+        25,
+        25,
+        112
+      ]
+    },
+    {
+      "name_en": "mintcream",
+      "name_zh": "薄荷奶油",
+      "hex": "#F5FFFA",
+      "rgb": [
+        245,
+        255,
+        250
+      ]
+    },
+    {
+      "name_en": "mistyrose",
+      "name_zh": "雾玫瑰色",
+      "hex": "#FFE4E1",
+      "rgb": [
+        255,
+        228,
+        225
+      ]
+    },
+    {
+      "name_en": "moccasin",
+      "name_zh": "鹿皮色",
+      "hex": "#FFE4B5",
+      "rgb": [
+        255,
+        228,
+        181
+      ]
+    },
+    {
+      "name_en": "navajowhite",
+      "name_zh": "纳瓦霍白",
+      "hex": "#FFDEAD",
+      "rgb": [
+        255,
+        222,
+        173
+      ]
+    },
+    {
+      "name_en": "navy",
+      "name_zh": "海军蓝",
+      "hex": "#000080",
+      "rgb": [
+        0,
+        0,
+        128
+      ]
+    },
+    {
+      "name_en": "oldlace",
+      "name_zh": "旧蕾丝色",
+      "hex": "#FDF5E6",
+      "rgb": [
+        253,
+        245,
+        230
+      ]
+    },
+    {
+      "name_en": "olive",
+      "name_zh": "橄榄色",
+      "hex": "#808000",
+      "rgb": [
+        128,
+        128,
+        0
+      ]
+    },
+    {
+      "name_en": "olivedrab",
+      "name_zh": "橄榄褐绿",
+      "hex": "#6B8E23",
+      "rgb": [
+        107,
+        142,
+        35
+      ]
+    },
+    {
+      "name_en": "orange",
+      "name_zh": "橙色",
+      "hex": "#FFA500",
+      "rgb": [
+        255,
+        165,
+        0
+      ]
+    },
+    {
+      "name_en": "orangered",
+      "name_zh": "橙红色",
+      "hex": "#FF4500",
+      "rgb": [
+        255,
+        69,
+        0
+      ]
+    },
+    {
+      "name_en": "orchid",
+      "name_zh": "兰花紫",
+      "hex": "#DA70D6",
+      "rgb": [
+        218,
+        112,
+        214
+      ]
+    },
+    {
+      "name_en": "palegoldenrod",
+      "name_zh": "浅金菊色",
+      "hex": "#EEE8AA",
+      "rgb": [
+        238,
+        232,
+        170
+      ]
+    },
+    {
+      "name_en": "palegreen",
+      "name_zh": "淡绿色",
+      "hex": "#98FB98",
+      "rgb": [
+        152,
+        251,
+        152
+      ]
+    },
+    {
+      "name_en": "paleturquoise",
+      "name_zh": "浅绿松石",
+      "hex": "#AFEEEE",
+      "rgb": [
+        175,
+        238,
+        238
+      ]
+    },
+    {
+      "name_en": "palevioletred",
+      "name_zh": "浅紫罗兰红",
+      "hex": "#DB7093",
+      "rgb": [
+        219,
+        112,
+        147
+      ]
+    },
+    {
+      "name_en": "papayawhip",
+      "name_zh": "木瓜色",
+      "hex": "#FFEFD5",
+      "rgb": [
+        255,
+        239,
+        213
+      ]
+    },
+    {
+      "name_en": "peachpuff",
+      "name_zh": "桃色",
+      "hex": "#FFDAB9",
+      "rgb": [
+        255,
+        218,
+        185
+      ]
+    },
+    {
+      "name_en": "peru",
+      "name_zh": "秘鲁色",
+      "hex": "#CD853F",
+      "rgb": [
+        205,
+        133,
+        63
+      ]
+    },
+    {
+      "name_en": "pink",
+      "name_zh": "粉色",
+      "hex": "#FFC0CB",
+      "rgb": [
+        255,
+        192,
+        203
+      ]
+    },
+    {
+      "name_en": "plum",
+      "name_zh": "李子色",
+      "hex": "#DDA0DD",
+      "rgb": [
+        221,
+        160,
+        221
+      ]
+    },
+    {
+      "name_en": "powderblue",
+      "name_zh": "粉末蓝",
+      "hex": "#B0E0E6",
+      "rgb": [
+        176,
+        224,
+        230
+      ]
+    },
+    {
+      "name_en": "purple",
+      "name_zh": "紫色",
+      "hex": "#800080",
+      "rgb": [
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "name_en": "rebeccapurple",
+      "name_zh": "丽贝卡紫",
+      "hex": "#663399",
+      "rgb": [
+        102,
+        51,
+        153
+      ]
+    },
+    {
+      "name_en": "red",
+      "name_zh": "红色",
+      "hex": "#FF0000",
+      "rgb": [
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "name_en": "rosybrown",
+      "name_zh": "玫瑰棕",
+      "hex": "#BC8F8F",
+      "rgb": [
+        188,
+        143,
+        143
+      ]
+    },
+    {
+      "name_en": "royalblue",
+      "name_zh": "皇家蓝",
+      "hex": "#4169E1",
+      "rgb": [
+        65,
+        105,
+        225
+      ]
+    },
+    {
+      "name_en": "saddlebrown",
+      "name_zh": "马鞍棕",
+      "hex": "#8B4513",
+      "rgb": [
+        139,
+        69,
+        19
+      ]
+    },
+    {
+      "name_en": "salmon",
+      "name_zh": "鲑红色",
+      "hex": "#FA8072",
+      "rgb": [
+        250,
+        128,
+        114
+      ]
+    },
+    {
+      "name_en": "sandybrown",
+      "name_zh": "沙棕色",
+      "hex": "#F4A460",
+      "rgb": [
+        244,
+        164,
+        96
+      ]
+    },
+    {
+      "name_en": "seagreen",
+      "name_zh": "海绿色",
+      "hex": "#2E8B57",
+      "rgb": [
+        46,
+        139,
+        87
+      ]
+    },
+    {
+      "name_en": "seashell",
+      "name_zh": "贝壳白",
+      "hex": "#FFF5EE",
+      "rgb": [
+        255,
+        245,
+        238
+      ]
+    },
+    {
+      "name_en": "sienna",
+      "name_zh": "赭石色",
+      "hex": "#A0522D",
+      "rgb": [
+        160,
+        82,
+        45
+      ]
+    },
+    {
+      "name_en": "silver",
+      "name_zh": "银色",
+      "hex": "#C0C0C0",
+      "rgb": [
+        192,
+        192,
+        192
+      ]
+    },
+    {
+      "name_en": "skyblue",
+      "name_zh": "天蓝色",
+      "hex": "#87CEEB",
+      "rgb": [
+        135,
+        206,
+        235
+      ]
+    },
+    {
+      "name_en": "slateblue",
+      "name_zh": "石板蓝",
+      "hex": "#6A5ACD",
+      "rgb": [
+        106,
+        90,
+        205
+      ]
+    },
+    {
+      "name_en": "slategray",
+      "name_zh": "石板灰",
+      "hex": "#708090",
+      "rgb": [
+        112,
+        128,
+        144
+      ]
+    },
+    {
+      "name_en": "slategrey",
+      "name_zh": "石板灰",
+      "hex": "#708090",
+      "rgb": [
+        112,
+        128,
+        144
+      ]
+    },
+    {
+      "name_en": "snow",
+      "name_zh": "雪白色",
+      "hex": "#FFFAFA",
+      "rgb": [
+        255,
+        250,
+        250
+      ]
+    },
+    {
+      "name_en": "springgreen",
+      "name_zh": "春绿色",
+      "hex": "#00FF7F",
+      "rgb": [
+        0,
+        255,
+        127
+      ]
+    },
+    {
+      "name_en": "steelblue",
+      "name_zh": "钢蓝色",
+      "hex": "#4682B4",
+      "rgb": [
+        70,
+        130,
+        180
+      ]
+    },
+    {
+      "name_en": "tan",
+      "name_zh": "棕褐色",
+      "hex": "#D2B48C",
+      "rgb": [
+        210,
+        180,
+        140
+      ]
+    },
+    {
+      "name_en": "teal",
+      "name_zh": "青绿色",
+      "hex": "#008080",
+      "rgb": [
+        0,
+        128,
+        128
+      ]
+    },
+    {
+      "name_en": "thistle",
+      "name_zh": "蓟紫色",
+      "hex": "#D8BFD8",
+      "rgb": [
+        216,
+        191,
+        216
+      ]
+    },
+    {
+      "name_en": "tomato",
+      "name_zh": "番茄红",
+      "hex": "#FF6347",
+      "rgb": [
+        255,
+        99,
+        71
+      ]
+    },
+    {
+      "name_en": "turquoise",
+      "name_zh": "绿松石",
+      "hex": "#40E0D0",
+      "rgb": [
+        64,
+        224,
+        208
+      ]
+    },
+    {
+      "name_en": "violet",
+      "name_zh": "紫罗兰",
+      "hex": "#EE82EE",
+      "rgb": [
+        238,
+        130,
+        238
+      ]
+    },
+    {
+      "name_en": "wheat",
+      "name_zh": "小麦色",
+      "hex": "#F5DEB3",
+      "rgb": [
+        245,
+        222,
+        179
+      ]
+    },
+    {
+      "name_en": "white",
+      "name_zh": "白色",
+      "hex": "#FFFFFF",
+      "rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name_en": "whitesmoke",
+      "name_zh": "烟白色",
+      "hex": "#F5F5F5",
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    {
+      "name_en": "yellow",
+      "name_zh": "黄色",
+      "hex": "#FFFF00",
+      "rgb": [
+        255,
+        255,
+        0
+      ]
+    },
+    {
+      "name_en": "yellowgreen",
+      "name_zh": "黄绿色",
+      "hex": "#9ACD32",
+      "rgb": [
+        154,
+        205,
+        50
+      ]
+    }
+  ]
+}
