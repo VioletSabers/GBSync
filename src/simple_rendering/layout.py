@@ -14,6 +14,24 @@ BASELINE_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’"
 TITLE_END_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’\"'…—-")
 
 
+def _exit_mixed_line_placements(
+    placements: List[PlacedText], allow_partial_layout: bool
+) -> Optional[List[PlacedText]]:
+    """Strict: empty placements -> None. Partial: always return the list (may be empty)."""
+    if allow_partial_layout:
+        return placements
+    return placements if placements else None
+
+
+def _fail_mixed_line_placements(
+    placements: List[PlacedText], allow_partial_layout: bool
+) -> Optional[List[PlacedText]]:
+    """On hard failure: partial keeps what was already placed; strict returns None."""
+    if allow_partial_layout:
+        return placements
+    return None
+
+
 @dataclass
 class PlacedText:
     text: str
@@ -74,14 +92,25 @@ def layout_segments(
     layout_mode: str,
     layout_variant: str = "",
     template_name: Optional[str] = None,
+    allow_partial_layout: bool = False,
 ) -> LayoutResult:
     measurer_img = Image.new("RGB", (canvas.width, canvas.height))
     draw = ImageDraw.Draw(measurer_img)
     fonts = _build_font_cache(segments)
     if layout_mode in {"mixed_line", "full_text"}:
         variant = layout_variant or "top_left"
-        placements = _layout_mixed_line(segments, fonts, draw, canvas, text_cfg, variant)
-        placements = _apply_block_vertical_anchor(placements, draw, canvas, variant)
+        placements = _layout_mixed_line(
+            segments,
+            fonts,
+            draw,
+            canvas,
+            text_cfg,
+            variant,
+            allow_partial_layout=allow_partial_layout,
+        )
+        placements = _apply_block_vertical_anchor(
+            placements, draw, canvas, variant, allow_partial_layout=allow_partial_layout
+        )
         rendering_text = "".join(seg.text for seg in segments)
     elif layout_mode == "vertical":
         variant = layout_variant or "top_left@rtl"
@@ -103,13 +132,26 @@ def layout_segments(
             text_cfg,
             variant,
             paragraph_spacing_override=paragraph_spacing_override,
+            allow_partial_layout=allow_partial_layout,
         )
-        placements = _apply_block_vertical_anchor(placements, draw, canvas, variant)
+        placements = _apply_block_vertical_anchor(
+            placements, draw, canvas, variant, allow_partial_layout=allow_partial_layout
+        )
         rendering_text = "\n".join(seg.text for seg in segments)
     elif layout_mode == "dual_column":
         variant = layout_variant or "top_left"
-        placements = _layout_dual_column(segments, fonts, draw, canvas, text_cfg, variant)
-        placements = _apply_block_vertical_anchor(placements, draw, canvas, variant)
+        placements = _layout_dual_column(
+            segments,
+            fonts,
+            draw,
+            canvas,
+            text_cfg,
+            variant,
+            allow_partial_layout=allow_partial_layout,
+        )
+        placements = _apply_block_vertical_anchor(
+            placements, draw, canvas, variant, allow_partial_layout=allow_partial_layout
+        )
         rendering_text = "\n".join(seg.text for seg in segments)
     elif layout_mode == "title_subtitle":
         variant = layout_variant or "centered"
@@ -175,6 +217,7 @@ def _layout_mixed_line(
     text_cfg: TextConfig,
     variant: str,
     width_ratio_range: Optional[Tuple[float, float]] = None,
+    allow_partial_layout: bool = False,
 ) -> Optional[List[PlacedText]]:
     placements: List[PlacedText] = []
     x = canvas.margin
@@ -271,16 +314,18 @@ def _layout_mixed_line(
         if not paragraph_lines:
             return True
         lines_to_render = list(paragraph_lines)
+        paragraph_justify_line = justify
         if justify:
-            # For justify mode, paragraph must first form at least 2 lines.
-            # Then drop the last line to keep "full-line justify only" style.
+            # For justify mode: if the paragraph wraps to only one line, degrade to h_align
+            # (left/center/right from variant) instead of stretching to full target width.
+            # If it wraps to 2+ lines, drop the last line for balance, then justify the remainder.
             if len(lines_to_render) < 2:
-                paragraph_lines.clear()
-                return False
-            _, _, dropped_h = lines_to_render.pop()
-            y -= dropped_h + text_cfg.line_spacing
+                paragraph_justify_line = False
+            else:
+                _, _, dropped_h = lines_to_render.pop()
+                y -= dropped_h + text_cfg.line_spacing
         for items, line_y, line_h in lines_to_render:
-            _render_line(items, line_y, line_h, justify_line=justify)
+            _render_line(items, line_y, line_h, justify_line=paragraph_justify_line)
         paragraph_lines.clear()
         paragraph_index += 1
         if width_ratio_range is not None:
@@ -300,6 +345,13 @@ def _layout_mixed_line(
             current_target_width = uniform_target_width
         return True
 
+    def _emit_buffered_paragraph_lines_if_partial() -> None:
+        # paragraph_lines are only copied into placements inside _commit_paragraph. If we hit a
+        # vertical overflow before the final commit (common for long single-paragraph full_text),
+        # placements would stay empty unless we flush the buffer here.
+        if allow_partial_layout and paragraph_lines:
+            _commit_paragraph()
+
     def flush_current_line() -> bool:
         nonlocal y
         if not current_line:
@@ -318,9 +370,11 @@ def _layout_mixed_line(
         for token in tokens:
             if token == "\n":
                 if not flush_current_line():
-                    return placements if placements else None
+                    _emit_buffered_paragraph_lines_if_partial()
+                    return _exit_mixed_line_placements(placements, allow_partial_layout)
                 if not _commit_paragraph():
-                    return None
+                    _emit_buffered_paragraph_lines_if_partial()
+                    return _fail_mixed_line_placements(placements, allow_partial_layout)
                 y += text_cfg.paragraph_spacing
                 x = canvas.margin
                 continue
@@ -332,7 +386,8 @@ def _layout_mixed_line(
                 preserve_word=seg.corpus_type == "english",
             )
             if chunks is None:
-                return None
+                _emit_buffered_paragraph_lines_if_partial()
+                return _fail_mixed_line_placements(placements, allow_partial_layout)
             for chunk in chunks:
                 units = [chunk] if seg.corpus_type == "english" else list(chunk)
                 for unit in units:
@@ -340,8 +395,11 @@ def _layout_mixed_line(
                     width = right - left
                     advance = max(width, int(round(draw.textlength(unit, font=font))))
                     height = bottom - top
-                    if unit and (width <= 0 or height <= 0):
-                        return None
+                    # PIL may report height 0 for whitespace (e.g. space); only treat as hard
+                    # failure for non-whitespace glyphs that should have ink.
+                    if unit.strip() and (width <= 0 or height <= 0):
+                        _emit_buffered_paragraph_lines_if_partial()
+                        return _fail_mixed_line_placements(placements, allow_partial_layout)
                     gap = 0
                     if current_line:
                         gap = _emoji_text_inline_gap(
@@ -357,7 +415,8 @@ def _layout_mixed_line(
                             carry = current_line.pop()
                             # Keep punctuation away from line start by carrying previous glyph down together.
                             if not flush_current_line():
-                                return placements if placements else None
+                                _emit_buffered_paragraph_lines_if_partial()
+                                return _exit_mixed_line_placements(placements, allow_partial_layout)
                             x = canvas.margin
                             current_line.append(
                                 _LineItem(
@@ -385,7 +444,8 @@ def _layout_mixed_line(
                             )
                         else:
                             if not flush_current_line():
-                                return placements if placements else None
+                                _emit_buffered_paragraph_lines_if_partial()
+                                return _exit_mixed_line_placements(placements, allow_partial_layout)
                             x = canvas.margin
                             gap = 0
                     x += gap
@@ -407,9 +467,11 @@ def _layout_mixed_line(
                     )
                     x += advance
     if not flush_current_line():
-        return placements if placements else None
+        _emit_buffered_paragraph_lines_if_partial()
+        return _exit_mixed_line_placements(placements, allow_partial_layout)
     if not _commit_paragraph():
-        return None
+        _emit_buffered_paragraph_lines_if_partial()
+        return _fail_mixed_line_placements(placements, allow_partial_layout)
 
     return placements
 
@@ -423,7 +485,7 @@ def _layout_segmented(
     variant: str,
     paragraph_spacing_override: Optional[int] = None,
     width_ratio_range: Optional[Tuple[float, float]] = None,
-    allow_partial_body_when_justify: bool = False,
+    allow_partial_layout: bool = False,
 ) -> Optional[List[PlacedText]]:
     paragraph_spacing = (
         paragraph_spacing_override if paragraph_spacing_override is not None else text_cfg.paragraph_spacing
@@ -472,7 +534,7 @@ def _layout_segmented(
                 y += paragraph_spacing
                 paragraph_idx += 1
             if y > canvas.height - canvas.margin:
-                return placements if placements else None
+                return _exit_mixed_line_placements(placements, allow_partial_layout)
             continue
         line_target_width = uniform_target_width
         if justify and justify_width_mode == "per_paragraph":
@@ -522,8 +584,11 @@ def _layout_segmented(
                     text_cfg=text_cfg,
                     variant=variant,
                     width_ratio_range=width_ratio_range,
+                    allow_partial_layout=allow_partial_layout,
                 )
                 if group_placements is None:
+                    if allow_partial_layout and placements:
+                        return placements
                     _skip_current_paragraph_block()
                     for k in range(seg_idx + 1, body_group_end + 1):
                         consumed_body_seg_idxs.add(k)
@@ -544,6 +609,14 @@ def _layout_segmented(
                     )
                     l, t, r, b = draw.textbbox((shifted.x, shifted.y), shifted.text, font=shifted.font, embedded_color=True)
                     if b > canvas.height - canvas.margin:
+                        if allow_partial_layout:
+                            if shifted_group:
+                                placements.extend(shifted_group)
+                                y = max(y, max_bottom)
+                                pending_title_checkpoint = None
+                                for k in range(seg_idx + 1, body_group_end + 1):
+                                    consumed_body_seg_idxs.add(k)
+                            return placements
                         _skip_current_paragraph_block()
                         shifted_group = []
                         break
@@ -583,19 +656,14 @@ def _layout_segmented(
                 preserve_word=seg.corpus_type == "english",
             )
             # For title_body in justify mode: body should first form at least 2 lines,
-            # then drop the last line for cleaner visual balance.
+            # then drop the last line for cleaner visual balance. A single wrapped line uses
+            # h_align only (see justify_line below), not full justify.
             if justify and seg.role == "body":
                 if lines is None:
                     # Keep None semantics: wrapping failed (e.g. unbreakable token too long).
                     pass
                 elif len(lines) >= 2:
                     lines = lines[:-1]
-                else:
-                    if allow_partial_body_when_justify and len(lines) == 1:
-                        pass
-                    else:
-                        # Enforce justify behavior: 1 line is invalid and should retry with richer text.
-                        return None
         if seg.role == "title" and not lines:
             # If title cannot be rendered (e.g. emptied by truncation/sanitization),
             # drop the whole title-body block to avoid orphan body paragraphs.
@@ -608,10 +676,14 @@ def _layout_segmented(
             continue
         if seg.role == "body" and not lines:
             # If body disappears after justify rules, drop the paired title as well.
+            if allow_partial_layout and placements:
+                return placements
             _skip_current_paragraph_block()
             continue
         if lines is None:
             # Current paragraph cannot be laid out; continue with next paragraph.
+            if allow_partial_layout and placements:
+                return placements
             _skip_current_paragraph_block()
             continue
         for line_idx, line in enumerate(lines):
@@ -619,12 +691,18 @@ def _layout_segmented(
             width = right - left
             height = bottom - top
             if line and (width <= 0 or height <= 0):
+                if allow_partial_layout and placements:
+                    return placements
                 _skip_current_paragraph_block()
                 break
             if width > line_target_width:
+                if allow_partial_layout and placements:
+                    return placements
                 _skip_current_paragraph_block()
                 break
             if y + height > canvas.height - canvas.margin:
+                if allow_partial_layout and placements:
+                    return placements
                 _skip_current_paragraph_block()
                 break
             line_items = _build_segment_line_items(
@@ -634,9 +712,14 @@ def _layout_segmented(
                 font=font,
             )
             if line_items is None:
+                if allow_partial_layout and placements:
+                    return placements
                 _skip_current_paragraph_block()
                 break
-            justify_line = justify and seg.role == "body" and len(line_items) > 1
+            body_multi_line = seg.role == "body" and len(lines) >= 2
+            justify_line = (
+                justify and seg.role == "body" and body_multi_line and len(line_items) > 1
+            )
             # Title should follow normal left/center/right alignment, not justify.
             render_width = line_target_width if justify_line else width
             start_x = _pick_line_start_x(h_align, canvas, render_width, line_target_width)
@@ -678,7 +761,7 @@ def _layout_segmented(
             if not (seg.role == "body" and next_role == "body"):
                 y += paragraph_spacing
         if y > canvas.height - canvas.margin:
-            return placements if placements else None
+            return _exit_mixed_line_placements(placements, allow_partial_layout)
     return placements
 
 
@@ -733,6 +816,7 @@ def _layout_dual_column(
     canvas: CanvasConfig,
     text_cfg: TextConfig,
     variant: str,
+    allow_partial_layout: bool = False,
 ) -> Optional[List[PlacedText]]:
     blocks = _split_segments_for_dual_column(segments)
     if not blocks:
@@ -811,7 +895,7 @@ def _layout_dual_column(
             column_variant,
             paragraph_spacing_override=text_cfg.paragraph_spacing,
             width_ratio_range=width_ratio_range,
-            allow_partial_body_when_justify=False,
+            allow_partial_layout=allow_partial_layout,
         )
         right_placements = _layout_segmented(
             right,
@@ -822,7 +906,7 @@ def _layout_dual_column(
             column_variant,
             paragraph_spacing_override=text_cfg.paragraph_spacing,
             width_ratio_range=width_ratio_range,
-            allow_partial_body_when_justify=False,
+            allow_partial_layout=allow_partial_layout,
         )
     else:
         left_placements = _layout_mixed_line(
@@ -833,6 +917,7 @@ def _layout_dual_column(
             text_cfg,
             column_variant,
             width_ratio_range=width_ratio_range,
+            allow_partial_layout=allow_partial_layout,
         )
         right_placements = _layout_mixed_line(
             right,
@@ -842,8 +927,14 @@ def _layout_dual_column(
             text_cfg,
             column_variant,
             width_ratio_range=width_ratio_range,
+            allow_partial_layout=allow_partial_layout,
         )
-    if left_placements is None or right_placements is None:
+    if allow_partial_layout:
+        left_placements = left_placements if left_placements is not None else []
+        right_placements = right_placements if right_placements is not None else []
+        if not left_placements and not right_placements:
+            return None
+    elif left_placements is None or right_placements is None:
         return None
     x_left = 0
     x_right = split_x
@@ -1214,6 +1305,7 @@ def _apply_block_vertical_anchor(
     draw: ImageDraw.ImageDraw,
     canvas: CanvasConfig,
     variant: str,
+    allow_partial_layout: bool = False,
 ) -> Optional[List[PlacedText]]:
     if not placements:
         return placements
@@ -1230,6 +1322,10 @@ def _apply_block_vertical_anchor(
     avail_width = canvas.width - 2 * canvas.margin
     avail_height = canvas.height - 2 * canvas.margin
     if width > avail_width or height > avail_height:
+        # Partial layouts may exceed the drawable band before all segments are placed;
+        # do not invalidate the whole layout (would drop multi-block candidates in resilient build).
+        if allow_partial_layout:
+            return placements
         return None
 
     dx, dy = 0, 0
@@ -1263,6 +1359,8 @@ def _apply_block_vertical_anchor(
         or s_right > canvas.width - canvas.margin
         or s_bottom > canvas.height - canvas.margin
     ):
+        if allow_partial_layout:
+            return placements
         return None
     return shifted
 

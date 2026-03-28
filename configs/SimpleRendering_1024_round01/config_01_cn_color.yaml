@@ -68,8 +68,10 @@ text:
   - '#F8FAFC'
   chinese_min_length: 24
   chinese_max_length: 96
-  english_min_length: 80
-  english_max_length: 320
+  english_min_length: 40
+  english_max_length: 120
+  title_corpus_units_min: 1
+  title_corpus_units_max: 5
 output:
   root_dir: ../../output/SimpleRendering_1024_round01/config_01_cn_color
   image_dir: images
@@ -87,6 +89,10 @@ corpus_sources:
 - path: ../../sample_data/chinese_continuous_github_300k.jsonl
   corpus_type: chinese
   sample_weight: 1.0
+title_corpus_sources:
+- path: ../../sample_data/chinese_xinhua_words.jsonl
+  corpus_type: chinese
+  sample_weight: 10.0
 font_category: simple
 fonts_by_corpus_by_category:
   simple:

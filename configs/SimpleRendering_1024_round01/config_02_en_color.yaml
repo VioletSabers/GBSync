@@ -1,19 +1,25 @@
-seed: 20260834
-parallel_workers: 1
+seed: 20260327
+parallel_workers: 6
 num_rounds: 1
 samples_per_round: 50
 shared_color_palette_json: ../web_standard_colors.json
 canvas:
-  width: 1536
-  height: 1536
-  min_width: 1536
+  width: 1024
+  height: 1024
+  min_width: 1024
   max_width: 1536
-  min_height: 1536
+  min_height: 1024
   max_height: 1536
-  short_edge_min: 1536
+  short_edge_min: 1024
   short_edge_max: 1536
   aspect_ratios:
   - '1:1'
+  - '2:3'
+  - '3:2'
+  - '3:4'
+  - '4:3'
+  - '9:16'
+  - '16:9'
   margin: 48
   min_text_bg_contrast_ratio: 4.0
   background_colors:
@@ -22,16 +28,17 @@ canvas:
   - '#111111'
   - '#F8FAFC'
 text:
-  max_font_size: 22
-  min_font_size: 10
-  line_spacing: 2
+  max_font_size: 64
+  min_font_size: 24
+  line_spacing: 8
   paragraph_spacing: 64
-  min_segments_per_image: 1
+  # full_text 多段：至少 2 个由 line_break 分隔的语料段（resilient 构建中的计划段数）
+  min_segments_per_image: 2
   max_segments_per_image: 8
-  min_corpus_units_per_segment: 50
-  max_corpus_units_per_segment: 90
-  emoji_insert_probability: 0.0
-  no_emoji_image_probability: 1.0
+  min_corpus_units_per_segment: 2
+  max_corpus_units_per_segment: 10
+  emoji_insert_probability: 0.45
+  no_emoji_image_probability: 0.15
   min_emojis_between_segments: 0
   max_emojis_between_segments: 3
   layout_modes:
@@ -63,12 +70,18 @@ text:
   chinese_min_length: 24
   chinese_max_length: 96
   english_min_length: 80
-  english_max_length: 320
+  english_max_length: 240
+  title_corpus_units_min: 1
+  title_corpus_units_max: 5
 output:
   root_dir: ../../output/SimpleRendering_1024_round01/config_02_en_color
   image_dir: images
   parquet_dir: parquet
 corpus_sources:
+- path: ../../sample_data/english_common_5000.jsonl
+  corpus_type: english
+  sample_weight: 10.0
+title_corpus_sources:
 - path: ../../sample_data/english_common_5000.jsonl
   corpus_type: english
   sample_weight: 10.0
@@ -93,14 +106,19 @@ colors_by_corpus:
   chinese:
   - '#FFCC80'
   - '#FFE082'
+  - '#FCA5A5'
+  - '#FDBA74'
+  - '#FDE68A'
+  - '#86EFAC'
+  - '#67E8F9'
+  - '#93C5FD'
+  - '#C4B5FD'
   english:
   - '#81D4FA'
   - '#B3E5FC'
   - '#60A5FA'
   - '#34D399'
   - '#F59E0B'
-  - '#A78BFA'
-  - '#F472B6'
   emoji:
   - '#FFFFFF'
   - '#F8FAFC'

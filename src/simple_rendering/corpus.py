@@ -27,6 +27,19 @@ def load_corpus_items(config: RenderConfig, config_dir: Path) -> List[CorpusItem
     return items
 
 
+def load_title_corpus_items(config: RenderConfig, config_dir: Path) -> List[CorpusItem]:
+    sources = config.title_corpus_sources or []
+    if not sources:
+        return []
+    items: List[CorpusItem] = []
+    for source in sources:
+        source_path = resolve_config_path(source.path, config_dir)
+        items.extend(_read_jsonl_source(source, source_path))
+    if not items:
+        raise ValueError("No valid corpus items loaded from title_corpus_sources jsonl files.")
+    return items
+
+
 def sample_segments(
     items: Sequence[CorpusItem],
     min_segments: int,

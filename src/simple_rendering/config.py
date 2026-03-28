@@ -60,6 +60,8 @@ class TextConfig:
     dual_column_inner_margin_at_1024: int
     dual_column_write_width_ratio_min: float
     dual_column_write_width_ratio_max: float
+    title_corpus_units_min: int
+    title_corpus_units_max: int
 
 
 @dataclass
@@ -93,6 +95,7 @@ class RenderConfig:
     fonts_by_corpus: Dict[str, List[str]]
     colors_by_corpus: Dict[str, List[str]]
     art_assets: Optional[ArtAssetsConfig] = None
+    title_corpus_sources: Optional[List[CorpusSource]] = None
 
 
 def _require_keys(payload: dict, keys: List[str], scope: str) -> None:
@@ -175,6 +178,28 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
             )
         )
 
+    title_sources: Optional[List[CorpusSource]] = None
+    title_raw_list = raw.get("title_corpus_sources")
+    if title_raw_list is not None:
+        if not isinstance(title_raw_list, list):
+            raise ValueError("title_corpus_sources must be a list when provided.")
+        parsed_title: List[CorpusSource] = []
+        for i, source in enumerate(title_raw_list):
+            if not isinstance(source, dict):
+                raise ValueError(f"title_corpus_sources[{i}] must be a mapping.")
+            _require_keys(source, ["path", "corpus_type"], f"title_corpus_sources[{i}]")
+            weight = float(source.get("sample_weight", 1.0))
+            if weight < 0:
+                raise ValueError(f"title_corpus_sources[{i}].sample_weight must be >= 0.")
+            parsed_title.append(
+                CorpusSource(
+                    path=source["path"],
+                    corpus_type=source["corpus_type"],
+                    sample_weight=weight,
+                )
+            )
+        title_sources = parsed_title or None
+
     if text_raw["min_segments_per_image"] > text_raw["max_segments_per_image"]:
         raise ValueError("text.min_segments_per_image must be <= text.max_segments_per_image")
     if text_raw["min_corpus_units_per_segment"] > text_raw["max_corpus_units_per_segment"]:
@@ -217,6 +242,12 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         raise ValueError("text.emoji_insert_probability must be in [0.0, 1.0].")
     if not (0.0 <= float(text_raw.get("no_emoji_image_probability", 0.0)) <= 1.0):
         raise ValueError("text.no_emoji_image_probability must be in [0.0, 1.0].")
+    title_corpus_units_min = int(text_raw.get("title_corpus_units_min", 1))
+    title_corpus_units_max = int(text_raw.get("title_corpus_units_max", 5))
+    if title_corpus_units_min < 1 or title_corpus_units_max < 1:
+        raise ValueError("text.title_corpus_units_min and title_corpus_units_max must be >= 1.")
+    if title_corpus_units_min > title_corpus_units_max:
+        raise ValueError("text.title_corpus_units_min must be <= text.title_corpus_units_max.")
     if text_raw["min_emojis_between_segments"] > text_raw["max_emojis_between_segments"]:
         raise ValueError(
             "text.min_emojis_between_segments must be <= text.max_emojis_between_segments"
@@ -326,6 +357,8 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
             dual_column_write_width_ratio_max=float(
                 text_raw.get("dual_column_write_width_ratio_max", 0.95)
             ),
+            title_corpus_units_min=title_corpus_units_min,
+            title_corpus_units_max=title_corpus_units_max,
         ),
         output=OutputConfig(
             root_dir=output_raw["root_dir"],
@@ -340,6 +373,7 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
             else {k: list(v) for k, v in raw["colors_by_corpus"].items()}
         ),
         art_assets=_resolve_art_assets(raw.get("art_assets")),
+        title_corpus_sources=title_sources,
     )
     _validate_references(config, base_dir=path.parent)
     return config
@@ -508,6 +542,22 @@ def _validate_references(config: RenderConfig, base_dir: Path) -> None:
             raise ValueError(
                 f"corpus_sources for corpus_type={corpus_type} must have at least one positive sample_weight."
             )
+
+    if config.title_corpus_sources:
+        for source in config.title_corpus_sources:
+            title_path = _resolve_with_base(source.path, base_dir)
+            if not title_path.exists():
+                raise ValueError(f"title_corpus_sources file does not exist: {title_path}")
+            if source.corpus_type not in config.fonts_by_corpus:
+                raise ValueError(f"No fonts configured for title corpus_type={source.corpus_type}")
+        title_weights_by_corpus: Dict[str, List[float]] = {}
+        for source in config.title_corpus_sources:
+            title_weights_by_corpus.setdefault(source.corpus_type, []).append(source.sample_weight)
+        for corpus_type, weights in title_weights_by_corpus.items():
+            if all(weight <= 0 for weight in weights):
+                raise ValueError(
+                    f"title_corpus_sources for corpus_type={corpus_type} must have at least one positive sample_weight."
+                )
 
     for corpus_type, font_paths in config.fonts_by_corpus.items():
         if not font_paths:

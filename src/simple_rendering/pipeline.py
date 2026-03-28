@@ -22,6 +22,7 @@ from .corpus import (
     build_inline_emoji_segments_from_pools,
     build_title_subtitle_segments_from_pools,
     load_corpus_items,
+    load_title_corpus_items,
 )
 from .font_manager import FontCoverageManager, build_styled_segments
 from .layout import layout_segments
@@ -42,6 +43,14 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
     corpus_pools = build_corpus_pools(corpus_items)
     text_corpus_types = tuple(sorted(corpus_pools.keys()))
     source_sampling_weights_by_corpus = _build_source_sampling_weights(config, config_dir, corpus_pools)
+    title_corpus_pools: Dict[str, Dict[str, List[str]]] = {}
+    title_source_sampling_weights_by_corpus: Dict[str, Dict[str, float]] = {}
+    if config.title_corpus_sources:
+        title_items = load_title_corpus_items(config, config_dir)
+        title_corpus_pools = build_corpus_pools(title_items)
+        title_source_sampling_weights_by_corpus = _build_title_source_sampling_weights(
+            config, config_dir, title_corpus_pools
+        )
     bootstrap_font_manager = FontCoverageManager()
     emoji_candidates = _collect_supported_emojis(config, config_dir, bootstrap_font_manager)
     background_image_paths = _collect_background_image_paths(config, config_dir)
@@ -62,6 +71,8 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
         "source_sampling_weights_by_corpus": source_sampling_weights_by_corpus,
         "emoji_candidates": emoji_candidates,
         "background_image_paths": background_image_paths,
+        "title_corpus_pools": title_corpus_pools,
+        "title_source_sampling_weights_by_corpus": title_source_sampling_weights_by_corpus,
     }
 
     for round_idx in range(1, config.num_rounds + 1):
@@ -137,6 +148,10 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
     ]
     emoji_candidates: Sequence[str] = WORKER_STATE["emoji_candidates"]
     background_image_paths: Sequence[str] = WORKER_STATE.get("background_image_paths", [])
+    title_corpus_pools: Dict[str, Dict[str, Sequence[str]]] = WORKER_STATE.get("title_corpus_pools") or {}
+    title_source_sampling_weights_by_corpus: Dict[str, Dict[str, float]] = (
+        WORKER_STATE.get("title_source_sampling_weights_by_corpus") or {}
+    )
     font_manager = WORKER_FONT_MANAGER
     if font_manager is None:
         raise RuntimeError("Worker font manager is not initialized.")
@@ -224,6 +239,8 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 segments, paragraph_stats = _build_title_body_segments_resilient(
                     corpus_pools=corpus_pools,
                     source_sampling_weights_by_corpus=active_source_sampling_weights,
+                    title_corpus_pools=title_corpus_pools,
+                    title_source_sampling_weights_by_corpus=title_source_sampling_weights_by_corpus,
                     emoji_candidates=emoji_candidates,
                     emoji_insert_probability=effective_emoji_prob,
                     min_emojis_between_units=effective_min_emoji,
@@ -234,6 +251,8 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                     chinese_max_length=config.text.chinese_max_length,
                     english_min_length=config.text.english_min_length,
                     english_max_length=config.text.english_max_length,
+                    title_corpus_units_min=config.text.title_corpus_units_min,
+                    title_corpus_units_max=config.text.title_corpus_units_max,
                     config=config,
                     config_dir=config_dir,
                     font_manager=font_manager,
@@ -252,6 +271,8 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                     segments = _build_title_body_segments_from_pools(
                         corpus_pools=corpus_pools,
                         source_sampling_weights_by_corpus=active_source_sampling_weights,
+                        title_corpus_pools=title_corpus_pools,
+                        title_source_sampling_weights_by_corpus=title_source_sampling_weights_by_corpus,
                         emoji_candidates=emoji_candidates,
                         emoji_insert_probability=effective_emoji_prob,
                         min_emojis_between_units=effective_min_emoji,
@@ -260,6 +281,8 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                         max_segments=effective_max_segments,
                         min_units_per_body=effective_min_units,
                         max_units_per_body=effective_max_units,
+                        title_corpus_units_min=config.text.title_corpus_units_min,
+                        title_corpus_units_max=config.text.title_corpus_units_max,
                         rng=rng,
                     )
                     template_name = "title_body"
@@ -359,6 +382,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 layout_mode=layout_mode,
                 layout_variant=layout_variant,
                 template_name=template_name,
+                allow_partial_layout=True,
             )
             if not _has_rendered_text(layout_result):
                 raise ValueError("No rendered text placements; resample.")
@@ -403,6 +427,10 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 "layout_variant": layout_result.layout_variant,
                 "attempt": int(attempt),
                 "mismatch_reason": reason,
+                "corpus_build_dropped_segments": int(paragraph_drop_count),
+                "planned_paragraph_texts": _planned_paragraph_texts_for_log(
+                    segments, layout_mode, template_name
+                ),
             }
             return {"row": row, "log": log_row}
         except ValueError as exc:
@@ -421,6 +449,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
         rng=rng,
     )
     if fallback is not None:
+        planned_txt = fallback.pop("_planned_paragraph_texts_log", [])
         fallback["_generation_log"] = {
             "image_id": fallback["ID"],
             "planned_paragraphs_initial": int(initial_planned_paragraphs or 1),
@@ -430,6 +459,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
             "layout_variant": "fallback",
             "attempt": int(max_retries),
             "mismatch_reason": "主流程重试失败，使用fallback最小样本",
+            "planned_paragraph_texts": planned_txt,
         }
         return {"row": fallback, "log": fallback["_generation_log"]}
     raise RuntimeError(f"Failed to generate sample after {max_retries} retries: {last_error}")
@@ -447,6 +477,59 @@ def _count_planned_paragraphs(
         return 0
     line_breaks = sum(1 for item in segments if getattr(item, "corpus_type", "") == "line_break")
     return line_breaks + 1
+
+
+def _planned_paragraph_texts_for_log(
+    segments: Sequence[CorpusItem],
+    layout_mode: str,
+    template_name: Optional[str],
+) -> List[Dict[str, object]]:
+    """
+    Per-paragraph source text as sampled (before layout/render), for generation_log.jsonl.
+    title_body: one entry per title block with title + merged body string.
+    Other modes: entries split on line_break corpus items, full paragraph text in "text".
+    """
+    if layout_mode == "title_body" or template_name == "title_body":
+        out: List[Dict[str, object]] = []
+        i = 0
+        para_idx = 0
+        n = len(segments)
+        while i < n:
+            if getattr(segments[i], "role", "") != "title":
+                i += 1
+                continue
+            title_text = str(segments[i].content)
+            i += 1
+            body_parts: List[str] = []
+            while i < n and getattr(segments[i], "role", "") != "title":
+                seg = segments[i]
+                if getattr(seg, "corpus_type", "") == "line_break":
+                    i += 1
+                    continue
+                body_parts.append(str(seg.content))
+                i += 1
+            out.append(
+                {
+                    "paragraph_index": para_idx,
+                    "title": title_text,
+                    "body": "".join(body_parts),
+                }
+            )
+            para_idx += 1
+        return out
+
+    blobs: List[str] = []
+    current: List[str] = []
+    for seg in segments:
+        if getattr(seg, "corpus_type", "") == "line_break":
+            if current:
+                blobs.append("".join(current))
+                current = []
+            continue
+        current.append(str(seg.content))
+    if current:
+        blobs.append("".join(current))
+    return [{"paragraph_index": idx, "text": t} for idx, t in enumerate(blobs)]
 
 
 def _count_actual_paragraphs(layout_result, layout_mode: str, template_name: Optional[str]) -> int:
@@ -560,12 +643,27 @@ def _truncate_segments_for_retry(segments, attempt: int):
     max_en_words = max(3, 10 - attempt // 8)
     truncated = []
     for item in segments:
+        role = getattr(item, "role", "body")
         if item.corpus_type == "chinese":
-            truncated.append(type(item)(content=item.content[:max_cn_len], corpus_type=item.corpus_type, source_path=item.source_path))
+            truncated.append(
+                type(item)(
+                    content=item.content[:max_cn_len],
+                    corpus_type=item.corpus_type,
+                    source_path=item.source_path,
+                    role=role,
+                )
+            )
         elif item.corpus_type == "english":
             words = item.content.split()
             truncated_text = " ".join(words[:max_en_words]) if words else item.content[:max_cn_len]
-            truncated.append(type(item)(content=truncated_text, corpus_type=item.corpus_type, source_path=item.source_path))
+            truncated.append(
+                type(item)(
+                    content=truncated_text,
+                    corpus_type=item.corpus_type,
+                    source_path=item.source_path,
+                    role=role,
+                )
+            )
         else:
             truncated.append(item)
     return truncated
@@ -597,8 +695,17 @@ def _generate_single_sample_fallback(
         units = list(units_by_source.get(source_path, []))
         if not units:
             continue
-        raw = rng.choice(units)
-        text = raw[:10] if corpus_type == "chinese" else " ".join(raw.split()[:4])
+        if corpus_type == "chinese":
+            raw = rng.choice(units)
+            text = raw[:10]
+        else:
+            # english jsonl 常为「一词一行」：从池中多次抽样再拼接，避免 fallback 只有单个 token。
+            parts: List[str] = []
+            for _ in range(8):
+                u = str(rng.choice(units)).strip()
+                if u:
+                    parts.append(u.split()[0])
+            text = " ".join(parts) if parts else "text"
         segments = [CorpusItem(content=text, corpus_type=corpus_type, source_path="__fallback__")]
         try:
             sampled_canvas = _sample_canvas_config(config, rng)
@@ -632,6 +739,7 @@ def _generate_single_sample_fallback(
                 layout_mode=layout_mode,
                 layout_variant=layout_variant,
                 template_name=None,
+                allow_partial_layout=True,
             )
             if not _has_rendered_text(layout_result):
                 continue
@@ -645,7 +753,7 @@ def _generate_single_sample_fallback(
                 background_image=background_image,
             )
             relative_img_path = image_path.relative_to(image_root)
-            return _build_parquet_row(
+            row = _build_parquet_row(
                 image_id=image_id,
                 relative_img_path=str(relative_img_path),
                 sampled_canvas=sampled_canvas,
@@ -655,6 +763,10 @@ def _generate_single_sample_fallback(
                 background=background,
                 template_name=None,
             )
+            row["_planned_paragraph_texts_log"] = _planned_paragraph_texts_for_log(
+                segments, layout_mode, None
+            )
+            return row
         except Exception:
             continue
     return None
@@ -1359,6 +1471,28 @@ def _build_source_sampling_weights(
     return weights
 
 
+def _build_title_source_sampling_weights(
+    config: RenderConfig,
+    config_dir: Path,
+    title_corpus_pools: Dict[str, Dict[str, List[str]]],
+) -> Dict[str, Dict[str, float]]:
+    sources = config.title_corpus_sources or []
+    if not sources:
+        return {}
+    weights: Dict[str, Dict[str, float]] = {
+        corpus_type: {source_path: 1.0 for source_path in units_by_source.keys()}
+        for corpus_type, units_by_source in title_corpus_pools.items()
+    }
+    for source in sources:
+        source_path = str(resolve_config_path(source.path, config_dir))
+        by_corpus = weights.get(source.corpus_type)
+        if by_corpus is None:
+            continue
+        if source_path in by_corpus:
+            by_corpus[source_path] = float(source.sample_weight)
+    return weights
+
+
 def _resolve_active_source_sampling_weights(
     source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
     active_text_corpus_types: Sequence[str],
@@ -1394,6 +1528,8 @@ def _resolve_template_config(config: RenderConfig, template_name: str) -> Dict[s
 def _build_title_body_segments_from_pools(
     corpus_pools: Dict[str, Dict[str, Sequence[str]]],
     source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
+    title_corpus_pools: Dict[str, Dict[str, Sequence[str]]],
+    title_source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
     emoji_candidates: Sequence[str],
     emoji_insert_probability: float,
     min_emojis_between_units: int,
@@ -1402,34 +1538,22 @@ def _build_title_body_segments_from_pools(
     max_segments: int,
     min_units_per_body: int,
     max_units_per_body: int,
+    title_corpus_units_min: int,
+    title_corpus_units_max: int,
     rng: random.Random,
 ) -> List[CorpusItem]:
     paragraph_count = rng.randint(max(1, min_segments), max(1, max_segments))
     out: List[CorpusItem] = []
-    chinese_pool = corpus_pools.get("chinese", {})
-    english_pool = corpus_pools.get("english", {})
     for p in range(paragraph_count):
-        title_corpus_type = "chinese" if chinese_pool else ("english" if english_pool else "chinese")
-        title_units_by_source = corpus_pools.get(title_corpus_type, {})
-        if not title_units_by_source:
-            continue
-        title = ""
-        title_source = "__title_body__"
-        for _ in range(6):
-            title_source = _pick_source_path_for_pipeline(
-                title_units_by_source,
-                source_sampling_weights_by_corpus.get(title_corpus_type, {}),
-                rng,
-            )
-            title_raw = rng.choice(list(title_units_by_source[title_source]))
-            candidate = title_raw.strip()
-            if title_corpus_type == "english":
-                candidate = " ".join(candidate.split()[:6])
-            else:
-                candidate = candidate[:12]
-            title = _sanitize_title_text(candidate)
-            if title:
-                break
+        title, title_corpus_type, title_source = _sample_concatenated_title(
+            title_corpus_pools=title_corpus_pools,
+            title_weights_by_corpus=title_source_sampling_weights_by_corpus,
+            body_corpus_pools=corpus_pools,
+            body_weights_by_corpus=source_sampling_weights_by_corpus,
+            min_units=title_corpus_units_min,
+            max_units=title_corpus_units_max,
+            rng=rng,
+        )
         if not title:
             continue
         out.append(CorpusItem(content=title, corpus_type=title_corpus_type, source_path=title_source, role="title"))
@@ -1516,6 +1640,8 @@ def _build_title_body_segments_from_pools(
 def _build_title_body_segments_resilient(
     corpus_pools: Dict[str, Dict[str, Sequence[str]]],
     source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
+    title_corpus_pools: Dict[str, Dict[str, Sequence[str]]],
+    title_source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
     emoji_candidates: Sequence[str],
     emoji_insert_probability: float,
     min_emojis_between_units: int,
@@ -1526,6 +1652,8 @@ def _build_title_body_segments_resilient(
     chinese_max_length: int,
     english_min_length: int,
     english_max_length: int,
+    title_corpus_units_min: int,
+    title_corpus_units_max: int,
     config: RenderConfig,
     config_dir: Path,
     font_manager: FontCoverageManager,
@@ -1543,6 +1671,8 @@ def _build_title_body_segments_resilient(
             para = _sample_one_title_body_paragraph(
                 corpus_pools=corpus_pools,
                 source_sampling_weights_by_corpus=source_sampling_weights_by_corpus,
+                title_corpus_pools=title_corpus_pools,
+                title_source_sampling_weights_by_corpus=title_source_sampling_weights_by_corpus,
                 emoji_candidates=emoji_candidates,
                 emoji_insert_probability=emoji_insert_probability,
                 min_emojis_between_units=min_emojis_between_units,
@@ -1551,6 +1681,8 @@ def _build_title_body_segments_resilient(
                 chinese_max_length=chinese_max_length,
                 english_min_length=english_min_length,
                 english_max_length=english_max_length,
+                title_corpus_units_min=title_corpus_units_min,
+                title_corpus_units_max=title_corpus_units_max,
                 rng=rng,
             )
             if not para:
@@ -1577,14 +1709,17 @@ def _build_title_body_segments_resilient(
                     template_name="title_body",
                     sampled_canvas=sampled_canvas,
                 )
-                _ = layout_segments(
+                lr = layout_segments(
                     segments=styled,
                     canvas=sampled_canvas,
                     text_cfg=config.text,
                     layout_mode="title_body",
                     layout_variant=layout_variant,
                     template_name="title_body",
+                    allow_partial_layout=True,
                 )
+                if not _has_rendered_text(lr):
+                    continue
                 accepted = candidate
                 paragraph_ok = True
                 break
@@ -1604,6 +1739,8 @@ def _sample_title_body_paragraph_count(min_segments: int, max_segments: int, rng
 def _sample_one_title_body_paragraph(
     corpus_pools: Dict[str, Dict[str, Sequence[str]]],
     source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
+    title_corpus_pools: Dict[str, Dict[str, Sequence[str]]],
+    title_source_sampling_weights_by_corpus: Dict[str, Dict[str, float]],
     emoji_candidates: Sequence[str],
     emoji_insert_probability: float,
     min_emojis_between_units: int,
@@ -1612,32 +1749,20 @@ def _sample_one_title_body_paragraph(
     chinese_max_length: int,
     english_min_length: int,
     english_max_length: int,
+    title_corpus_units_min: int,
+    title_corpus_units_max: int,
     rng: random.Random,
 ) -> List[CorpusItem]:
     out: List[CorpusItem] = []
-    chinese_pool = corpus_pools.get("chinese", {})
-    english_pool = corpus_pools.get("english", {})
-    title_corpus_type = "chinese" if chinese_pool else ("english" if english_pool else "chinese")
-    title_units_by_source = corpus_pools.get(title_corpus_type, {})
-    if not title_units_by_source:
-        return []
-    title = ""
-    title_source = "__title_body__"
-    for _ in range(6):
-        title_source = _pick_source_path_for_pipeline(
-            title_units_by_source,
-            source_sampling_weights_by_corpus.get(title_corpus_type, {}),
-            rng,
-        )
-        title_raw = rng.choice(list(title_units_by_source[title_source]))
-        candidate = title_raw.strip()
-        if title_corpus_type == "english":
-            candidate = " ".join(candidate.split()[:6])
-        else:
-            candidate = candidate[:12]
-        title = _sanitize_title_text(candidate)
-        if title:
-            break
+    title, title_corpus_type, title_source = _sample_concatenated_title(
+        title_corpus_pools=title_corpus_pools,
+        title_weights_by_corpus=title_source_sampling_weights_by_corpus,
+        body_corpus_pools=corpus_pools,
+        body_weights_by_corpus=source_sampling_weights_by_corpus,
+        min_units=title_corpus_units_min,
+        max_units=title_corpus_units_max,
+        rng=rng,
+    )
     if not title:
         return []
     out.append(CorpusItem(content=title, corpus_type=title_corpus_type, source_path=title_source, role="title"))
@@ -1785,14 +1910,17 @@ def _build_full_text_segments_resilient(
                     template_name=None,
                     sampled_canvas=sampled_canvas,
                 )
-                _ = layout_segments(
+                lr = layout_segments(
                     segments=styled,
                     canvas=sampled_canvas,
                     text_cfg=config.text,
                     layout_mode=layout_mode,
                     layout_variant=layout_variant,
                     template_name=None,
+                    allow_partial_layout=True,
                 )
+                if not _has_rendered_text(lr):
+                    continue
                 accepted = candidate
                 seg_ok = True
                 break
@@ -1944,3 +2072,69 @@ def _sanitize_title_text(text: str) -> str:
     # Avoid punctuation-only titles that later become empty during layout.
     has_word = any(ch not in TITLE_END_PUNCTUATION and not ch.isspace() for ch in out)
     return out if has_word else ""
+
+
+def _sample_concatenated_title(
+    title_corpus_pools: Dict[str, Dict[str, Sequence[str]]],
+    title_weights_by_corpus: Dict[str, Dict[str, float]],
+    body_corpus_pools: Dict[str, Dict[str, Sequence[str]]],
+    body_weights_by_corpus: Dict[str, Dict[str, float]],
+    min_units: int,
+    max_units: int,
+    rng: random.Random,
+) -> Tuple[str, str, str]:
+    """
+    Build one title string: sample min_units..max_units lines from title_corpus_pools (if configured),
+    else fall back to a short snippet from body pools. English units are joined with spaces; Chinese
+    concatenated. Layout truncates to one line (_truncate_text_to_single_line); overflow is dropped there.
+    Returns (title_text, corpus_type, source_path).
+    """
+    text_types = ("chinese", "english")
+    lo = max(1, min(min_units, max_units))
+    hi = max(min_units, max_units)
+    if title_corpus_pools:
+        available = [t for t in text_types if title_corpus_pools.get(t)]
+        if not available:
+            return "", "", ""
+        title_type = rng.choice(available)
+        pools = title_corpus_pools[title_type]
+        weights = title_weights_by_corpus.get(title_type, {})
+        n = rng.randint(lo, hi)
+        parts: List[str] = []
+        primary_source = ""
+        for _ in range(n):
+            sp = _pick_source_path_for_pipeline(pools, weights, rng)
+            if not primary_source:
+                primary_source = sp
+            raw = str(rng.choice(list(pools[sp]))).strip()
+            if title_type == "english":
+                raw = " ".join(raw.split())
+            if raw:
+                parts.append(raw)
+        if not parts:
+            return "", "", ""
+        joined = " ".join(parts) if title_type == "english" else "".join(parts)
+        cleaned = _sanitize_title_text(joined)
+        if not cleaned:
+            return "", "", ""
+        src_path = primary_source if len(parts) == 1 else "__title_concat__"
+        return cleaned, title_type, src_path
+    chinese_pool = body_corpus_pools.get("chinese", {})
+    english_pool = body_corpus_pools.get("english", {})
+    title_type = "chinese" if chinese_pool else ("english" if english_pool else "chinese")
+    pools = body_corpus_pools.get(title_type, {})
+    if not pools:
+        return "", "", ""
+    weights = body_weights_by_corpus.get(title_type, {})
+    for _ in range(6):
+        title_source = _pick_source_path_for_pipeline(pools, weights, rng)
+        title_raw = rng.choice(list(pools[title_source]))
+        candidate = title_raw.strip()
+        if title_type == "english":
+            candidate = " ".join(candidate.split()[:6])
+        else:
+            candidate = candidate[:12]
+        title = _sanitize_title_text(candidate)
+        if title:
+            return title, title_type, title_source
+    return "", "", ""

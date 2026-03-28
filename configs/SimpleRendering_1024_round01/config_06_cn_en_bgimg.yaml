@@ -27,6 +27,8 @@ canvas:
   background_colors:
   - '#000000'
   - '#FFFFFF'
+  - '#111111'
+  - '#F8FAFC'
 text:
   max_font_size: 64
   min_font_size: 24
@@ -70,6 +72,8 @@ text:
   chinese_max_length: 96
   english_min_length: 80
   english_max_length: 320
+  title_corpus_units_min: 1
+  title_corpus_units_max: 5
 output:
   root_dir: ../../output/SimpleRendering_1024_round01/config_06_cn_en_bgimg
   image_dir: images
@@ -93,6 +97,13 @@ corpus_sources:
 - path: ../../sample_data/english_continuous_github_300k.jsonl
   corpus_type: english
   sample_weight: 1.0
+title_corpus_sources:
+- path: ../../sample_data/chinese_xinhua_words.jsonl
+  corpus_type: chinese
+  sample_weight: 10.0
+- path: ../../sample_data/english_common_5000.jsonl
+  corpus_type: english
+  sample_weight: 10.0
 font_category: simple
 fonts_by_corpus_by_category:
   simple:
@@ -117,13 +128,16 @@ colors_by_corpus:
   - '#FCA5A5'
   - '#FDBA74'
   - '#FDE68A'
+  - '#86EFAC'
+  - '#67E8F9'
+  - '#93C5FD'
+  - '#C4B5FD'
   english:
   - '#81D4FA'
   - '#B3E5FC'
   - '#60A5FA'
   - '#34D399'
   - '#F59E0B'
-  - '#A78BFA'
   emoji:
   - '#FFFFFF'
   - '#F8FAFC'
