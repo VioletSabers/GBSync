@@ -10,7 +10,6 @@ from .config import CanvasConfig, TextConfig
 from .font_manager import StyledSegment
 
 LEADING_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》”’")
-BASELINE_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’")
 TITLE_END_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’\"'…—-")
 
 
@@ -42,6 +41,8 @@ class PlacedText:
     font_style: str
     role: str = "body"
     effects: Optional[Dict[str, object]] = None
+    # When set (e.g. "ls"), (x, y) is the Pillow text anchor; default None uses legacy top-left.
+    anchor: Optional[str] = None
 
 
 @dataclass
@@ -255,23 +256,21 @@ def _layout_mixed_line(
 
     def _render_line(items: List[_LineItem], line_y: int, line_height: int, justify_line: bool) -> None:
         line_width = _measure_line_width_with_inline_gaps(items)
+        gap_slacks: Optional[List[int]] = None
         if justify_line:
-            if len(items) <= 1:
+            gap_slacks = _justify_inter_word_slacks(items, current_target_width)
+            if gap_slacks is None:
                 justify_line = False
         render_width = current_target_width if justify_line and line_width <= current_target_width else line_width
         start_x = _pick_line_start_x(h_align, canvas, render_width, current_target_width)
-        if justify_line:
-            gaps = len(items) - 1
-            extra = max(0, current_target_width - line_width)
-            gap_base = extra // gaps
-            gap_rem = extra % gaps
+        baseline_y = _baseline_y_for_line_items(items, line_y)
+        if justify_line and gap_slacks is not None:
             x_cursor = start_x
             for idx, item in enumerate(items):
                 if idx > 0:
                     x_cursor += _emoji_text_inline_gap(items[idx - 1], item)
-                box_height = item.bottom - item.top
-                y_draw = _line_item_y_draw(item, line_y, line_height, box_height)
                 x_draw = x_cursor - item.left
+                y_draw, anch = _inline_item_y_and_anchor(item, line_y, line_height, baseline_y)
                 placements.append(
                     PlacedText(
                         text=item.text,
@@ -282,19 +281,19 @@ def _layout_mixed_line(
                         font_style=item.font_style,
                         role=getattr(item, "role", "body"),
                         effects=getattr(item, "effects", None),
+                        anchor=anch,
                     )
                 )
                 x_cursor += item.width
-                if idx < gaps:
-                    x_cursor += gap_base + (1 if idx < gap_rem else 0)
+                if idx < len(items) - 1:
+                    x_cursor += gap_slacks[idx]
         if not justify_line:
             x_cursor = start_x
             for idx, item in enumerate(items):
                 if idx > 0:
                     x_cursor += _emoji_text_inline_gap(items[idx - 1], item)
-                box_height = item.bottom - item.top
-                y_draw = _line_item_y_draw(item, line_y, line_height, box_height)
                 x_draw = x_cursor - item.left
+                y_draw, anch = _inline_item_y_and_anchor(item, line_y, line_height, baseline_y)
                 placements.append(
                     PlacedText(
                         text=item.text,
@@ -305,6 +304,7 @@ def _layout_mixed_line(
                         font_style=item.font_style,
                         role=getattr(item, "role", "body"),
                         effects=getattr(item, "effects", None),
+                        anchor=anch,
                     )
                 )
                 x_cursor += item.width
@@ -389,11 +389,27 @@ def _layout_mixed_line(
                 _emit_buffered_paragraph_lines_if_partial()
                 return _fail_mixed_line_placements(placements, allow_partial_layout)
             for chunk in chunks:
-                units = [chunk] if seg.corpus_type == "english" else list(chunk)
+                if seg.corpus_type == "english":
+                    # One wrapped line must become word-sized items so justify can insert slack
+                    # between words (same convention as _build_segment_line_items).
+                    wds = [w for w in chunk.split() if w]
+                    if not wds:
+                        # Whitespace-only chunks (explicit space StyledSegment / corpus inject) must
+                        # not vanish: split() drops them and previously removed all inter-word gaps.
+                        units = [" "] if (chunk != "" and all(c.isspace() for c in chunk)) else []
+                    else:
+                        units = [f"{w} " if j < len(wds) - 1 else w for j, w in enumerate(wds)]
+                else:
+                    units = list(chunk)
                 for unit in units:
-                    left, top, right, bottom = _measure_text_bbox(draw, unit, font)
+                    bbox_anchor = None if seg.corpus_type == "emoji" else "ls"
+                    left, top, right, bottom = _measure_text_bbox(draw, unit, font, anchor=bbox_anchor)
                     width = right - left
-                    advance = max(width, int(round(draw.textlength(unit, font=font))))
+                    advance = (
+                        _horizontal_advance_ls(draw, font, unit, left, right)
+                        if bbox_anchor == "ls"
+                        else max(width, int(round(draw.textlength(unit, font=font))))
+                    )
                     height = bottom - top
                     # PIL may report height 0 for whitespace (e.g. space); only treat as hard
                     # failure for non-whitespace glyphs that should have ink.
@@ -606,6 +622,7 @@ def _layout_segmented(
                         font_style=p.font_style,
                         role=p.role,
                         effects=p.effects,
+                        anchor=getattr(p, "anchor", None),
                     )
                     l, t, r, b = draw.textbbox((shifted.x, shifted.y), shifted.text, font=shifted.font, embedded_color=True)
                     if b > canvas.height - canvas.margin:
@@ -687,24 +704,6 @@ def _layout_segmented(
             _skip_current_paragraph_block()
             continue
         for line_idx, line in enumerate(lines):
-            left, top, right, bottom = _measure_text_bbox(draw, line, font)
-            width = right - left
-            height = bottom - top
-            if line and (width <= 0 or height <= 0):
-                if allow_partial_layout and placements:
-                    return placements
-                _skip_current_paragraph_block()
-                break
-            if width > line_target_width:
-                if allow_partial_layout and placements:
-                    return placements
-                _skip_current_paragraph_block()
-                break
-            if y + height > canvas.height - canvas.margin:
-                if allow_partial_layout and placements:
-                    return placements
-                _skip_current_paragraph_block()
-                break
             line_items = _build_segment_line_items(
                 line=line,
                 seg=seg,
@@ -716,23 +715,49 @@ def _layout_segmented(
                     return placements
                 _skip_current_paragraph_block()
                 break
+            if not line_items:
+                if allow_partial_layout and placements:
+                    return placements
+                _skip_current_paragraph_block()
+                break
+            width = _measure_line_width_with_inline_gaps(line_items)
+            line_height = max(item.bottom - item.top for item in line_items)
+            if line and width <= 0:
+                if allow_partial_layout and placements:
+                    return placements
+                _skip_current_paragraph_block()
+                break
+            if line_height <= 0:
+                if allow_partial_layout and placements:
+                    return placements
+                _skip_current_paragraph_block()
+                break
+            if width > line_target_width:
+                if allow_partial_layout and placements:
+                    return placements
+                _skip_current_paragraph_block()
+                break
+            if y + line_height > canvas.height - canvas.margin:
+                if allow_partial_layout and placements:
+                    return placements
+                _skip_current_paragraph_block()
+                break
             body_multi_line = seg.role == "body" and len(lines) >= 2
-            justify_line = (
-                justify and seg.role == "body" and body_multi_line and len(line_items) > 1
-            )
+            justify_line = justify and seg.role == "body" and body_multi_line and len(line_items) > 1
+            gap_slacks: Optional[List[int]] = None
+            if justify_line:
+                gap_slacks = _justify_inter_word_slacks(line_items, line_target_width)
+                if gap_slacks is None:
+                    justify_line = False
             # Title should follow normal left/center/right alignment, not justify.
-            render_width = line_target_width if justify_line else width
+            render_width = line_target_width if justify_line and width <= line_target_width else width
             start_x = _pick_line_start_x(h_align, canvas, render_width, line_target_width)
             x_cursor = start_x
-            gaps = len(line_items) - 1
-            extra = max(0, line_target_width - _measure_line_width_with_inline_gaps(line_items)) if justify_line else 0
-            gap_base = (extra // gaps) if justify_line and gaps > 0 else 0
-            gap_rem = (extra % gaps) if justify_line and gaps > 0 else 0
+            baseline_y = _baseline_y_for_line_items(line_items, y)
             for idx, item in enumerate(line_items):
                 if idx > 0:
                     x_cursor += _emoji_text_inline_gap(line_items[idx - 1], item)
-                box_height = item.bottom - item.top
-                y_draw = _line_item_y_draw(item, y, height, box_height)
+                y_draw, anch = _inline_item_y_and_anchor(item, y, line_height, baseline_y)
                 placements.append(
                     PlacedText(
                         text=item.text,
@@ -743,12 +768,13 @@ def _layout_segmented(
                         font_style=item.font_style,
                         role=item.role,
                         effects=item.effects,
+                        anchor=anch,
                     )
                 )
                 x_cursor += item.width
-                if justify_line and idx < gaps:
-                    x_cursor += gap_base + (1 if idx < gap_rem else 0)
-            y += height + text_cfg.line_spacing
+                if justify_line and gap_slacks is not None and idx < len(line_items) - 1:
+                    x_cursor += gap_slacks[idx]
+            y += line_height + text_cfg.line_spacing
         if skip_body_until_next_title:
             continue
         y -= text_cfg.line_spacing
@@ -776,19 +802,28 @@ def _build_segment_line_items(
     if seg.corpus_type == "english":
         # Split into words so justify can distribute spacing between words.
         # Keep one trailing normal space for all but last word to preserve baseline readability.
-        words = [w for w in line.split(" ") if w]
+        words = [w for w in line.split() if w]
         if not words:
-            return []
-        units = [f"{w} " if idx < len(words) - 1 else w for idx, w in enumerate(words)]
+            if line != "" and all(c.isspace() for c in line):
+                units = [" "]
+            else:
+                return []
+        else:
+            units = [f"{w} " if idx < len(words) - 1 else w for idx, w in enumerate(words)]
     else:
         units = list(line)
     items: List[_LineItem] = []
     for unit in units:
-        left, top, right, bottom = _measure_text_bbox(draw, unit, font)
+        bbox_anchor = None if seg.corpus_type == "emoji" else "ls"
+        left, top, right, bottom = _measure_text_bbox(draw, unit, font, anchor=bbox_anchor)
         width = right - left
-        advance = max(width, int(round(draw.textlength(unit, font=font))))
+        advance = (
+            _horizontal_advance_ls(draw, font, unit, left, right)
+            if bbox_anchor == "ls"
+            else max(width, int(round(draw.textlength(unit, font=font))))
+        )
         height = bottom - top
-        if unit and (width <= 0 or height <= 0):
+        if unit.strip() and (width <= 0 or height <= 0):
             return None
         items.append(
             _LineItem(
@@ -949,6 +984,7 @@ def _layout_dual_column(
             font_style=p.font_style,
             role=p.role,
             effects=p.effects,
+            anchor=getattr(p, "anchor", None),
         )
         for p in left_placements
     ] + [
@@ -961,6 +997,7 @@ def _layout_dual_column(
             font_style=p.font_style,
             role=p.role,
             effects=p.effects,
+            anchor=getattr(p, "anchor", None),
         )
         for p in right_placements
     ]
@@ -1346,6 +1383,7 @@ def _apply_block_vertical_anchor(
             font_style=item.font_style,
             role=item.role,
             effects=item.effects,
+            anchor=getattr(item, "anchor", None),
         )
         for item in placements
     ]
@@ -1375,7 +1413,11 @@ def _measure_placements_bbox(
     rights: List[int] = []
     bottoms: List[int] = []
     for item in placements:
-        l, t, r, b = draw.textbbox((item.x, item.y), item.text, font=item.font, embedded_color=True)
+        kw = {"font": item.font, "embedded_color": True}
+        a = getattr(item, "anchor", None)
+        if a:
+            kw["anchor"] = a
+        l, t, r, b = draw.textbbox((item.x, item.y), item.text, **kw)
         lefts.append(l)
         tops.append(t)
         rights.append(r)
@@ -1465,11 +1507,59 @@ def _measure_line_width_with_inline_gaps(items: Sequence[_LineItem]) -> int:
     return width
 
 
-def _line_item_y_draw(item: _LineItem, y: int, line_height: int, box_height: int) -> int:
-    # Punctuation should sit on baseline instead of being vertically centered.
-    if len(item.text) == 1 and item.text in BASELINE_PUNCTUATION:
-        return y + line_height - box_height - item.top
-    return y + (line_height - box_height) // 2 - item.top
+def _english_word_count_for_justify(items: Sequence[_LineItem]) -> int:
+    """Whitespace-separated tokens from english corpus items only (emoji segments excluded)."""
+    parts: List[str] = []
+    for it in items:
+        if it.corpus_type == "english":
+            parts.append(it.text)
+    return len([w for w in "".join(parts).split() if w])
+
+
+def _is_justify_word_unit(item: _LineItem) -> bool:
+    """English glyph unit that is not a standalone emoji (emoji may use corpus_type english when split from a line)."""
+    if item.corpus_type != "english":
+        return False
+    core = item.text.strip()
+    if not core:
+        return False
+    return not _is_emoji_text(core, item.corpus_type)
+
+
+def _justify_inter_word_slacks(
+    items: Sequence[_LineItem], target_width: int
+) -> Optional[List[int]]:
+    """
+    Pixel slack to insert after each item (before the next). None means do not justify to target
+    (fall back to h_align). Slacks are only placed between adjacent non-emoji english word units
+    so emoji boundaries keep a fixed _emoji_text_inline_gap and do not absorb justify stretch.
+    """
+    n = len(items)
+    if n < 2:
+        return None
+    if _english_word_count_for_justify(items) < 2:
+        return None
+    line_width = _measure_line_width_with_inline_gaps(items)
+    extra = max(0, target_width - line_width)
+    eligible = [
+        i
+        for i in range(n - 1)
+        if _is_justify_word_unit(items[i]) and _is_justify_word_unit(items[i + 1])
+    ]
+    # Prefer stretching only between non-emoji english words; if there is no such gap
+    # (e.g. emoji between every word) fall back to all inter-item gaps so justify still
+    # reaches target width.
+    gap_indices = eligible if eligible else list(range(n - 1))
+    if not gap_indices:
+        if extra > 0:
+            return None
+        return [0] * (n - 1)
+    base = extra // len(gap_indices)
+    rem = extra % len(gap_indices)
+    out = [0] * (n - 1)
+    for j, i in enumerate(gap_indices):
+        out[i] = base + (1 if j < rem else 0)
+    return out
 
 
 def _is_leading_punctuation_unit(text: str) -> bool:
@@ -1692,6 +1782,53 @@ def _measure_text(
 
 
 def _measure_text_bbox(
-    draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    anchor: Optional[str] = None,
 ) -> Tuple[int, int, int, int]:
-    return draw.textbbox((0, 0), text, font=font, embedded_color=True)
+    kw = {"font": font, "embedded_color": True}
+    if anchor:
+        kw["anchor"] = anchor
+    return draw.textbbox((0, 0), text, **kw)
+
+
+def _horizontal_advance_ls(
+    draw: ImageDraw.ImageDraw,
+    font: ImageFont.FreeTypeFont,
+    unit: str,
+    bbox_left: int,
+    bbox_right: int,
+) -> int:
+    """
+    Horizontal advance after drawing `unit` with anchor ls. Ink bbox often ignores trailing
+    spaces; using only max(ink_width, textlength(unit)) can still under-advance so the next
+    word is drawn too close. Force word + explicit space width when the token ends with U+0020.
+    """
+    ink_w = max(0, bbox_right - bbox_left)
+    tl = float(draw.textlength(unit, font=font))
+    out = max(tl, float(ink_w))
+    if unit.endswith(" "):
+        base = unit[:-1]
+        sp = float(draw.textlength(" ", font=font))
+        base_tl = float(draw.textlength(base, font=font)) if base else 0.0
+        out = max(out, base_tl + sp)
+    rounded = int(round(out))
+    return max(1, rounded) if unit else 0
+
+
+def _baseline_y_for_line_items(items: Sequence[_LineItem], line_y: int) -> int:
+    """Shared baseline y for alphabetic text; emoji metrics are excluded so emoji don't skew the line."""
+    non_emoji = [it for it in items if it.corpus_type != "emoji"]
+    src = non_emoji if non_emoji else list(items)
+    return line_y - min(it.top for it in src)
+
+
+def _inline_item_y_and_anchor(
+    item: _LineItem, line_y: int, line_height: int, baseline_y: int
+) -> Tuple[int, Optional[str]]:
+    # Color emoji fonts don't sit on the Latin baseline with anchor "ls"; center the glyph in the line box.
+    if item.corpus_type == "emoji":
+        box_h = item.bottom - item.top
+        return line_y + (line_height - box_h) // 2 - item.top, None
+    return baseline_y, "ls"

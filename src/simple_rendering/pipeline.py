@@ -23,6 +23,7 @@ from .corpus import (
     build_title_subtitle_segments_from_pools,
     load_corpus_items,
     load_title_corpus_items,
+    normalize_english_corpus_unit,
 )
 from .font_manager import FontCoverageManager, build_styled_segments
 from .layout import layout_segments
@@ -1572,7 +1573,10 @@ def _build_title_body_segments_from_pools(
                 rng,
             )
             raw = rng.choice(list(body_units_by_source[body_source]))
-            chunks.append(raw.strip())
+            if body_corpus_type == "english":
+                chunks.append(normalize_english_corpus_unit(str(raw)))
+            else:
+                chunks.append(str(raw).strip())
         body_units = [c for c in chunks if c]
         if body_units:
             emoji_pool = tuple(emoji_candidates)

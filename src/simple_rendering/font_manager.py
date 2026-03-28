@@ -180,6 +180,39 @@ def build_styled_segments(
     return styled
 
 
+def _needs_injected_ascii_space_between_corpus_items(prev: CorpusItem, curr: CorpusItem) -> bool:
+    """
+    Force a visible ASCII space between corpus items when the pipeline did not insert one:
+    - english | english: always unless boundary already has whitespace
+    - emoji | emoji: never
+    - english <-> emoji: unless boundary already has whitespace
+    Chinese adjacency is unchanged (no automatic spaces).
+    """
+    if prev.corpus_type == "line_break" or curr.corpus_type == "line_break":
+        return False
+    pt, ct = prev.corpus_type, curr.corpus_type
+    if pt == "emoji" and ct == "emoji":
+        return False
+    if pt == "english" and ct == "english":
+        ps, cs = prev.content or "", curr.content or ""
+        if ps and ps[-1].isspace():
+            return False
+        if cs and cs[0].isspace():
+            return False
+        return True
+    if pt == "emoji" and ct == "english":
+        cs = curr.content or ""
+        if cs and cs[0].isspace():
+            return False
+        return True
+    if pt == "english" and ct == "emoji":
+        ps = prev.content or ""
+        if ps and ps[-1].isspace():
+            return False
+        return True
+    return False
+
+
 def _style_one_segment(
     current_segment: Sequence[CorpusItem],
     config: RenderConfig,
@@ -310,7 +343,24 @@ def _style_one_segment(
         font_manager=font_manager,
         requested_size=base_font_size,
     )
+    prev_corpus_item: Optional[CorpusItem] = None
     for item in current_segment:
+        if prev_corpus_item is not None and _needs_injected_ascii_space_between_corpus_items(
+            prev_corpus_item, item
+        ):
+            out.append(
+                StyledSegment(
+                    text=" ",
+                    corpus_type=base_corpus_type,
+                    font_path=base_font,
+                    font_name=Path(base_font).name,
+                    color=base_color,
+                    font_size=base_font_size,
+                    font_style=base_font_style,
+                    role=base_role,
+                    effects=base_effects,
+                )
+            )
         if item.corpus_type == "emoji":
             emoji_font = _pick_font_for_text(
                 corpus_type="emoji",
@@ -334,6 +384,8 @@ def _style_one_segment(
                     effects=base_effects,
                 )
             )
+            prev_corpus_item = item
+            continue
         else:
             if item.corpus_type == "chinese":
                 # Character-level fallback to avoid tofu boxes:
@@ -351,6 +403,7 @@ def _style_one_segment(
                         base_effects=base_effects,
                     )
                 )
+                prev_corpus_item = item
                 continue
             out.append(
                 StyledSegment(
@@ -365,6 +418,7 @@ def _style_one_segment(
                     effects=base_effects,
                 )
             )
+            prev_corpus_item = item
     return out
 
 

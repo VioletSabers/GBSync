@@ -30,7 +30,7 @@ canvas:
 text:
   max_font_size: 64
   min_font_size: 24
-  line_spacing: 8
+  line_spacing: 12
   paragraph_spacing: 64
   min_segments_per_image: 1
   max_segments_per_image: 8

@@ -17,6 +17,11 @@ class CorpusItem:
     role: str = "body"
 
 
+def normalize_english_corpus_unit(text: str) -> str:
+    """Collapse any run of whitespace to single ASCII spaces between tokens (english jsonl lines)."""
+    return " ".join(text.split())
+
+
 def load_corpus_items(config: RenderConfig, config_dir: Path) -> List[CorpusItem]:
     items: List[CorpusItem] = []
     for source in config.corpus_sources:
@@ -76,10 +81,11 @@ def build_multi_unit_text_segments(
     for _ in range(segment_count):
         corpus_type = rng.choice(corpus_types)
         unit_count = rng.randint(min_units_per_segment, max_units_per_segment)
-        units = [rng.choice(pools[corpus_type]).content for _ in range(unit_count)]
         if corpus_type == "english":
+            units = [normalize_english_corpus_unit(rng.choice(pools[corpus_type]).content) for _ in range(unit_count)]
             content = " ".join(units)
         else:
+            units = [rng.choice(pools[corpus_type]).content for _ in range(unit_count)]
             content = "".join(units)
         segments.append(
             CorpusItem(
@@ -213,9 +219,11 @@ def build_inline_emoji_segments_from_pools(
                 rng=rng,
             )
             units = units_by_source[source_path]
+            raw_unit = str(rng.choice(units))
+            piece = normalize_english_corpus_unit(raw_unit) if corpus_type == "english" else raw_unit.strip()
             output.append(
                 CorpusItem(
-                    content=rng.choice(units),
+                    content=piece,
                     corpus_type=corpus_type,
                     source_path=source_path,
                     role="body",
@@ -409,9 +417,11 @@ def _build_role_units(
         units = list(filtered_units_by_source[source_path])
         if not units:
             continue
+        raw_u = str(rng.choice(units))
+        piece = normalize_english_corpus_unit(raw_u) if corpus_type == "english" else raw_u
         items.append(
             CorpusItem(
-                content=rng.choice(units),
+                content=piece,
                 corpus_type=corpus_type,
                 source_path=source_path,
                 role=role,
@@ -526,6 +536,8 @@ def _read_jsonl_source(source: CorpusSource, source_path: Path) -> List[CorpusIt
             content = content.strip()
             if not content:
                 continue
+            if source.corpus_type == "english":
+                content = normalize_english_corpus_unit(content)
             loaded.append(
                 CorpusItem(
                     content=content,

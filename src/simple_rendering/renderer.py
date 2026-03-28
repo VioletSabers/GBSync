@@ -53,6 +53,10 @@ def render_image(
 
 
 def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> None:
+    def _anchor_kw() -> dict:
+        a = getattr(placed, "anchor", None)
+        return {"anchor": a} if a else {}
+
     effects = getattr(placed, "effects", None) or {}
     if effects:
         calligraphy_cfg = effects.get("calligraphy")
@@ -69,7 +73,7 @@ def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> 
 
     if do_italic:
         left, top, right, bottom = draw.textbbox(
-            (0, 0), placed.text, font=placed.font, embedded_color=True
+            (0, 0), placed.text, font=placed.font, embedded_color=True, **_anchor_kw()
         )
         width = right - left
         height = bottom - top
@@ -94,6 +98,7 @@ def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> 
                 embedded_color=True,
                 stroke_width=stroke,
                 stroke_fill=placed.color,
+                **_anchor_kw(),
             )
         else:
             text_draw.text(
@@ -102,6 +107,7 @@ def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> 
                 fill=placed.color,
                 font=placed.font,
                 embedded_color=True,
+                **_anchor_kw(),
             )
         shear = 0.28
         out_w = base_w + int(abs(shear) * base_h) + 2 * pad
@@ -129,6 +135,7 @@ def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> 
             embedded_color=True,
             stroke_width=stroke,
             stroke_fill=placed.color,
+            **_anchor_kw(),
         )
         return
     draw.text(
@@ -137,6 +144,7 @@ def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> 
         fill=placed.color,
         font=placed.font,
         embedded_color=True,
+        **_anchor_kw(),
     )
 
 
@@ -205,7 +213,10 @@ def _draw_with_basic_effects(image: Image.Image, draw: ImageDraw.ImageDraw, plac
     style = placed.font_style or "normal"
     do_bold = style in {"bold", "bold_italic"}
     do_italic = style in {"italic", "bold_italic"}
-    left, top, right, bottom = draw.textbbox((0, 0), placed.text, font=placed.font, embedded_color=True)
+    _ak = {}
+    if getattr(placed, "anchor", None):
+        _ak["anchor"] = placed.anchor
+    left, top, right, bottom = draw.textbbox((0, 0), placed.text, font=placed.font, embedded_color=True, **_ak)
     width = right - left
     height = bottom - top
     if width <= 0 or height <= 0:
@@ -232,6 +243,7 @@ def _draw_with_basic_effects(image: Image.Image, draw: ImageDraw.ImageDraw, plac
         embedded_color=True,
         stroke_width=stroke,
         stroke_fill=outline_color if stroke > 0 else placed.color,
+        **_ak,
     )
 
     if do_italic:

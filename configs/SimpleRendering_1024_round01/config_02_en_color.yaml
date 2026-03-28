@@ -6,12 +6,12 @@ shared_color_palette_json: ../web_standard_colors.json
 canvas:
   width: 1024
   height: 1024
-  min_width: 1024
-  max_width: 1536
-  min_height: 1024
-  max_height: 1536
-  short_edge_min: 1024
-  short_edge_max: 1536
+  min_width: 2048
+  max_width: 3072
+  min_height: 2048
+  max_height: 3072
+  short_edge_min: 2048
+  short_edge_max: 3072
   aspect_ratios:
   - '1:1'
   - '2:3'
@@ -30,7 +30,7 @@ canvas:
 text:
   max_font_size: 64
   min_font_size: 24
-  line_spacing: 8
+  line_spacing: 12
   paragraph_spacing: 64
   # full_text 多段：至少 2 个由 line_break 分隔的语料段（resilient 构建中的计划段数）
   min_segments_per_image: 2
