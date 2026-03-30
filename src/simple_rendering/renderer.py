@@ -49,6 +49,8 @@ def render_image(
     for placed in layout_result.placements:
         _draw_styled_text(image, draw, placed)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Favor throughput for dataset generation: lower PNG compression is much faster.
+    # image.save(out_path, format="PNG", compress_level=1, optimize=False)
     image.save(out_path, format="PNG")
 
 
@@ -64,9 +66,10 @@ def _draw_styled_text(image: Image.Image, draw: ImageDraw.ImageDraw, placed) -> 
             _draw_with_calligraphy_effects(
                 image=image, draw=draw, placed=placed, effects=effects, calligraphy_cfg=calligraphy_cfg
             )
+            return
         else:
             _draw_with_basic_effects(image=image, draw=draw, placed=placed, effects=effects)
-        return
+            return
     style = placed.font_style or "normal"
     do_bold = style in {"bold", "bold_italic"}
     do_italic = style in {"italic", "bold_italic"}

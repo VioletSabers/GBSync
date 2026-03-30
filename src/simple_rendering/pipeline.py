@@ -1737,6 +1737,7 @@ def _build_title_body_segments_resilient(
     layout_variant: str,
     rng: random.Random,
 ) -> Tuple[List[CorpusItem], Dict[str, int]]:
+    _ = (config, config_dir, font_manager, background_color, sampled_canvas, layout_variant)
     planned = _sample_title_body_paragraph_count(min_segments, max_segments, rng)
     accepted: List[CorpusItem] = []
     dropped = 0
@@ -1773,34 +1774,9 @@ def _build_title_body_segments_resilient(
                     )
                 )
             candidate.extend(para)
-            try:
-                styled = build_styled_segments(
-                    sampled_segments=candidate,
-                    config=config,
-                    config_dir=config_dir,
-                    font_manager=font_manager,
-                    background_color=background_color,
-                    rng=rng,
-                    template_name="title_body",
-                    sampled_canvas=sampled_canvas,
-                )
-                lr = layout_segments(
-                    segments=styled,
-                    canvas=sampled_canvas,
-                    text_cfg=config.text,
-                    layout_mode="title_body",
-                    layout_variant=layout_variant,
-                    template_name="title_body",
-                    allow_partial_layout=True,
-                    rng=rng,
-                )
-                if not _has_rendered_text(lr):
-                    continue
-                accepted = candidate
-                paragraph_ok = True
-                break
-            except Exception:
-                continue
+            accepted = candidate
+            paragraph_ok = True
+            break
         if not paragraph_ok:
             dropped += 1
     return accepted, {"planned_paragraphs": planned, "dropped_paragraphs": dropped}
@@ -1942,6 +1918,7 @@ def _build_full_text_segments_resilient(
     layout_variant: str,
     rng: random.Random,
 ) -> Tuple[List[CorpusItem], Dict[str, int]]:
+    _ = (config, config_dir, font_manager, background_color, sampled_canvas, layout_mode, layout_variant)
     planned = _sample_title_body_paragraph_count(min_segments, max_segments, rng)
     accepted: List[CorpusItem] = []
     dropped = 0
@@ -1975,34 +1952,9 @@ def _build_full_text_segments_resilient(
                     )
                 )
             candidate.extend(seg_items)
-            try:
-                styled = build_styled_segments(
-                    sampled_segments=candidate,
-                    config=config,
-                    config_dir=config_dir,
-                    font_manager=font_manager,
-                    background_color=background_color,
-                    rng=rng,
-                    template_name=None,
-                    sampled_canvas=sampled_canvas,
-                )
-                lr = layout_segments(
-                    segments=styled,
-                    canvas=sampled_canvas,
-                    text_cfg=config.text,
-                    layout_mode=layout_mode,
-                    layout_variant=layout_variant,
-                    template_name=None,
-                    allow_partial_layout=True,
-                    rng=rng,
-                )
-                if not _has_rendered_text(lr):
-                    continue
-                accepted = candidate
-                seg_ok = True
-                break
-            except Exception:
-                continue
+            accepted = candidate
+            seg_ok = True
+            break
         if not seg_ok:
             dropped += 1
     return accepted, {"planned_paragraphs": planned, "dropped_paragraphs": dropped}
