@@ -34,6 +34,10 @@ def _parse_content_dict(raw: Any) -> Any:
     if not s:
         return None
     try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    try:
         return ast.literal_eval(s)
     except (SyntaxError, ValueError):
         return None

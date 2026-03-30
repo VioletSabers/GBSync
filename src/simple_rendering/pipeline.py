@@ -860,7 +860,9 @@ def _write_round_parquet(parquet_path: Path, rows: List[Dict]) -> None:
         if "_generation_log" in row:
             row.pop("_generation_log", None)
     for row in rows:
-        _warn_if_content_dict_invalid(row.get("ID", "__unknown__"), row.get("content_dict"))
+        sid = row.get("ID", "__unknown__")
+        _warn_if_parquet_json_list_field(sid, row.get("content_dict"), "content_dict")
+        _warn_if_parquet_json_list_field(sid, row.get("ocr_attribute"), "ocr_attribute")
     schema = pa.schema(
         [
             ("ID", pa.string()),
@@ -910,8 +912,10 @@ def _build_parquet_row(
         background=background,
         template_name=template_name,
     )
-    content_dict = repr(content_list)
-    ocr_attribute = repr(ocr_rows)
+    # Use JSON with ensure_ascii=False so emoji and all BMP/supplementary chars are stored
+    # as UTF-8 text, not Python repr() escapes like \U0001f600 or \u200d.
+    content_dict = json.dumps(content_list, ensure_ascii=False)
+    ocr_attribute = json.dumps(ocr_rows, ensure_ascii=False)
     return {
         "ID": image_id,
         "relative_img_path": relative_img_path,
@@ -922,17 +926,24 @@ def _build_parquet_row(
     }
 
 
-def _warn_if_content_dict_invalid(sample_id: str, content_dict: Optional[str]) -> None:
-    if content_dict is None:
-        warnings.warn(f"[{sample_id}] content_dict is missing.", stacklevel=2)
+def _warn_if_parquet_json_list_field(
+    sample_id: str, raw: Optional[str], field_name: str
+) -> None:
+    """Validate JSON (or legacy repr) list fields; used for content_dict and ocr_attribute."""
+    if raw is None:
+        warnings.warn(f"[{sample_id}] {field_name} is missing.", stacklevel=2)
         return
+    parsed: object
     try:
-        parsed = eval(content_dict, {"__builtins__": {}}, {})
-    except Exception as exc:
-        warnings.warn(f"[{sample_id}] content_dict eval failed: {exc}", stacklevel=2)
-        return
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        try:
+            parsed = eval(raw, {"__builtins__": {}}, {})
+        except Exception as exc:
+            warnings.warn(f"[{sample_id}] {field_name} parse failed: {exc}", stacklevel=2)
+            return
     if not isinstance(parsed, list):
-        warnings.warn(f"[{sample_id}] content_dict eval result is not a list.", stacklevel=2)
+        warnings.warn(f"[{sample_id}] {field_name} parse result is not a list.", stacklevel=2)
 
 
 def _build_content_list_from_paragraphs(
