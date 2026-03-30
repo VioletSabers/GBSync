@@ -34,6 +34,114 @@ EMOJI_CANDIDATES = ["😀", "😄", "😎", "🚀", "✨", "🎯", "✅", "🔥"
 TITLE_END_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’\"'…—-")
 WORKER_STATE: Dict = {}
 WORKER_FONT_MANAGER: Optional[FontCoverageManager] = None
+WORKER_CAPTION_TEMPLATES_L1: Optional[Dict[str, List[str]]] = None
+WORKER_CAPTION_TEMPLATES_L2: Optional[Dict[str, Dict[str, List[str]]]] = None
+
+
+def _load_caption_templates_L1(templates_path: Path) -> Dict[str, List[str]]:
+    """
+    Load caption templates JSON file.
+
+    Expected format:
+      {
+        "zh": ["...{text_all}...", ...],
+        "en": ["...{text_all}...", ...]
+      }
+    """
+    try:
+        with templates_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"caption templates file not found: {templates_path}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"caption templates must be a JSON object: {templates_path}")
+    for lang in ("zh", "en"):
+        if lang not in data or not isinstance(data[lang], list) or not all(
+            isinstance(x, str) for x in data[lang]
+        ):
+            raise ValueError(f"caption templates[{lang}] must be a list of strings: {templates_path}")
+    return {"zh": data["zh"], "en": data["en"]}
+
+
+def _apply_caption_template(template: str, text_all: str) -> str:
+    # Support both "{text_all}" and a raw "text_all" placeholder.
+    return template.replace("{text_all}", text_all).replace("text_all", text_all)
+
+
+def _load_caption_templates_L2(templates_path: Path) -> Dict[str, Dict[str, List[str]]]:
+    """
+    Load caption templates L2 JSON file.
+
+    Expected format (role_nested):
+      {
+        "zh": {"title": [...], "body": [...]},
+        "en": {"title": [...], "body": [...]}
+      }
+    """
+    try:
+        with templates_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"caption L2 templates file not found: {templates_path}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"caption L2 templates must be a JSON object: {templates_path}")
+    out: Dict[str, Dict[str, List[str]]] = {}
+    for lang in ("zh", "en"):
+        lang_obj = data.get(lang)
+        if not isinstance(lang_obj, dict):
+            raise ValueError(f"caption L2 templates[{lang}] must be an object with title/body lists: {templates_path}")
+        for role in ("title", "body"):
+            role_list = lang_obj.get(role)
+            if not isinstance(role_list, list) or not all(isinstance(x, str) for x in role_list):
+                raise ValueError(
+                    f"caption L2 templates[{lang}][{role}] must be a list of strings: {templates_path}"
+                )
+        out[lang] = {"title": lang_obj["title"], "body": lang_obj["body"]}
+    return out
+
+
+def _apply_caption_template_L2(template: str, font_name: str, text_color: str, text_paragraph: str) -> str:
+    return (
+        template.replace("{font_name}", font_name)
+        .replace("{text_color}", text_color)
+        .replace("{text_paragraph}", text_paragraph)
+    )
+
+
+def _group_content_by_paragraph(content_list: Sequence[Dict[str, object]]) -> List[Dict[str, str]]:
+    """
+    Merge rendered line-level content rows into paragraph-level units by paragraph_index.
+    Preserve first-seen paragraph order.
+    """
+    grouped: Dict[int, Dict[str, object]] = {}
+    order: List[int] = []
+    for item in content_list:
+        para_idx = int(item.get("paragraph_index", 0) or 0)
+        text = str(item.get("text", ""))
+        if para_idx not in grouped:
+            grouped[para_idx] = {
+                "texts": [],
+                "font": str(item.get("font", "")),
+                "text_color": str(item.get("text_color", "")),
+                "role": str(item.get("role", "body")),
+            }
+            order.append(para_idx)
+        grouped[para_idx]["texts"].append(text)
+    out: List[Dict[str, str]] = []
+    for para_idx in order:
+        g = grouped[para_idx]
+        paragraph_text = "".join(str(t) for t in g["texts"] if str(t))
+        if not paragraph_text:
+            continue
+        out.append(
+            {
+                "text_paragraph": paragraph_text,
+                "font": str(g["font"]),
+                "text_color": str(g["text_color"]),
+                "role": str(g["role"]),
+            }
+        )
+    return out
 
 
 def _textbbox_for_placed(draw: ImageDraw.ImageDraw, placed) -> Tuple[float, float, float, float]:
@@ -137,6 +245,25 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
     bootstrap_font_manager = FontCoverageManager()
     emoji_candidates = _collect_supported_emojis(config, config_dir, bootstrap_font_manager)
     background_image_paths = _collect_background_image_paths(config, config_dir)
+    if not getattr(config, "caption_templates_L1_path", None):
+        raise RuntimeError(
+            "caption_templates_L1_path is required in config YAML root for parquet caption fields."
+        )
+    templates_path = Path(config.caption_templates_L1_path).expanduser()
+    if not templates_path.is_absolute():
+        templates_path = config_dir / templates_path
+    templates_path = templates_path.resolve()
+    caption_templates_L1 = _load_caption_templates_L1(templates_path)
+
+    if not getattr(config, "caption_templates_L2_path", None):
+        raise RuntimeError(
+            "caption_templates_L2_path is required in config YAML root for parquet caption L2 fields."
+        )
+    templates_path_L2 = Path(config.caption_templates_L2_path).expanduser()
+    if not templates_path_L2.is_absolute():
+        templates_path_L2 = config_dir / templates_path_L2
+    templates_path_L2 = templates_path_L2.resolve()
+    caption_templates_L2 = _load_caption_templates_L2(templates_path_L2)
 
     output_root = resolve_config_path(config.output.root_dir, config_dir)
     image_root = output_root / config.output.image_dir
@@ -156,6 +283,8 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
         "background_image_paths": background_image_paths,
         "title_corpus_pools": title_corpus_pools,
         "title_source_sampling_weights_by_corpus": title_source_sampling_weights_by_corpus,
+        "caption_templates_L1": caption_templates_L1,
+        "caption_templates_L2": caption_templates_L2,
     }
 
     for round_idx in range(1, config.num_rounds + 1):
@@ -210,9 +339,11 @@ def _generate_round_parallel(
 
 
 def _init_worker(state: Dict) -> None:
-    global WORKER_STATE, WORKER_FONT_MANAGER
+    global WORKER_STATE, WORKER_FONT_MANAGER, WORKER_CAPTION_TEMPLATES_L1, WORKER_CAPTION_TEMPLATES_L2
     WORKER_STATE = state
     WORKER_FONT_MANAGER = FontCoverageManager()
+    WORKER_CAPTION_TEMPLATES_L1 = WORKER_STATE.get("caption_templates_L1")
+    WORKER_CAPTION_TEMPLATES_L2 = WORKER_STATE.get("caption_templates_L2")
 
 
 def _generate_sample_task(task: Tuple[int, int, int]) -> Dict:
@@ -480,6 +611,16 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 background_image=background_image,
             )
             relative_img_path = image_path.relative_to(image_root)
+            if WORKER_CAPTION_TEMPLATES_L1 is None:
+                raise RuntimeError("Worker caption templates not initialized (caption_templates_L1 missing).")
+            caption_template_zh = rng.choice(WORKER_CAPTION_TEMPLATES_L1["zh"])
+            caption_template_en = rng.choice(WORKER_CAPTION_TEMPLATES_L1["en"])
+            if WORKER_CAPTION_TEMPLATES_L2 is None:
+                raise RuntimeError("Worker caption templates not initialized (caption_templates_L2 missing).")
+            caption_template_zh_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["title"])
+            caption_template_zh_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["body"])
+            caption_template_en_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["title"])
+            caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["body"])
             row = _build_parquet_row(
                 image_id=image_id,
                 relative_img_path=str(relative_img_path),
@@ -489,6 +630,12 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 styled_segments=styled_segments,
                 background=background,
                 template_name=template_name,
+                caption_template_zh=caption_template_zh,
+                caption_template_en=caption_template_en,
+                caption_template_zh_title=caption_template_zh_title,
+                caption_template_zh_body=caption_template_zh_body,
+                caption_template_en_title=caption_template_en_title,
+                caption_template_en_body=caption_template_en_body,
             )
             actual_paragraphs = _count_actual_paragraphs(
                 layout_result=layout_result,
@@ -838,6 +985,16 @@ def _generate_single_sample_fallback(
                 background_image=background_image,
             )
             relative_img_path = image_path.relative_to(image_root)
+            if WORKER_CAPTION_TEMPLATES_L1 is None:
+                raise RuntimeError("Worker caption templates not initialized (caption_templates_L1 missing).")
+            caption_template_zh = rng.choice(WORKER_CAPTION_TEMPLATES_L1["zh"])
+            caption_template_en = rng.choice(WORKER_CAPTION_TEMPLATES_L1["en"])
+            if WORKER_CAPTION_TEMPLATES_L2 is None:
+                raise RuntimeError("Worker caption templates not initialized (caption_templates_L2 missing).")
+            caption_template_zh_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["title"])
+            caption_template_zh_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["body"])
+            caption_template_en_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["title"])
+            caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["body"])
             row = _build_parquet_row(
                 image_id=image_id,
                 relative_img_path=str(relative_img_path),
@@ -847,6 +1004,12 @@ def _generate_single_sample_fallback(
                 styled_segments=styled_segments,
                 background=background,
                 template_name=None,
+                caption_template_zh=caption_template_zh,
+                caption_template_en=caption_template_en,
+                caption_template_zh_title=caption_template_zh_title,
+                caption_template_zh_body=caption_template_zh_body,
+                caption_template_en_title=caption_template_en_title,
+                caption_template_en_body=caption_template_en_body,
             )
             row["_planned_paragraph_texts_log"] = _planned_paragraph_texts_for_log(
                 segments, layout_mode, None
@@ -873,6 +1036,10 @@ def _write_round_parquet(parquet_path: Path, rows: List[Dict]) -> None:
             ("height", pa.int32()),
             ("content_dict", pa.string()),
             ("ocr_attribute", pa.string()),
+            ("caption_zh_L1", pa.string()),
+            ("caption_en_L1", pa.string()),
+            ("caption_zh_L2", pa.string()),
+            ("caption_en_L2", pa.string()),
         ]
     )
     table = pa.Table.from_pylist(rows, schema=schema)
@@ -896,6 +1063,12 @@ def _build_parquet_row(
     styled_segments,
     background: str,
     template_name: Optional[str],
+    caption_template_zh: str,
+    caption_template_en: str,
+    caption_template_zh_title: str,
+    caption_template_zh_body: str,
+    caption_template_en_title: str,
+    caption_template_en_body: str,
 ) -> Dict:
     ocr_rows = _build_ocr_attributes(
         placements=layout_result.placements,
@@ -914,6 +1087,33 @@ def _build_parquet_row(
         background=background,
         template_name=template_name,
     )
+    paragraph_rows = _group_content_by_paragraph(content_list)
+    text_all = "\n".join(row["text_paragraph"] for row in paragraph_rows)
+    caption_zh_L1 = _apply_caption_template(caption_template_zh, text_all)
+    caption_en_L1 = _apply_caption_template(caption_template_en, text_all)
+    caption_lines_zh_L2: List[str] = []
+    caption_lines_en_L2: List[str] = []
+    for row in paragraph_rows:
+        text_paragraph = row["text_paragraph"]
+        role = row["role"]
+        font_name = row["font"]
+        text_color = row["text_color"]
+        is_title = role == "title"
+        tpl_zh = caption_template_zh_title if is_title else caption_template_zh_body
+        tpl_en = caption_template_en_title if is_title else caption_template_en_body
+        caption_lines_zh_L2.append(
+            _apply_caption_template_L2(
+                tpl_zh, font_name=font_name, text_color=text_color, text_paragraph=text_paragraph
+            )
+        )
+        caption_lines_en_L2.append(
+            _apply_caption_template_L2(
+                tpl_en, font_name=font_name, text_color=text_color, text_paragraph=text_paragraph
+            )
+        )
+    # Store L2 caption as a single string: one paragraph-description per line.
+    caption_zh_L2 = "\n".join(caption_lines_zh_L2)
+    caption_en_L2 = "\n".join(caption_lines_en_L2)
     # Use JSON with ensure_ascii=False so emoji and all BMP/supplementary chars are stored
     # as UTF-8 text, not Python repr() escapes like \U0001f600 or \u200d.
     content_dict = json.dumps(content_list, ensure_ascii=False)
@@ -925,6 +1125,10 @@ def _build_parquet_row(
         "height": sampled_canvas.height,
         "content_dict": content_dict,
         "ocr_attribute": ocr_attribute,
+        "caption_zh_L1": caption_zh_L1,
+        "caption_en_L1": caption_en_L1,
+        "caption_zh_L2": caption_zh_L2,
+        "caption_en_L2": caption_en_L2,
     }
 
 

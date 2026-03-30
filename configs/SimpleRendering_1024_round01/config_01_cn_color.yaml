@@ -2,6 +2,8 @@ seed: 20260327
 parallel_workers: 6
 num_rounds: 1
 samples_per_round: 50
+caption_templates_L1_path: ../templates/caption_templates_L1.json
+caption_templates_L2_path: ../templates/caption_templates_L2.json
 shared_color_palette_json: ../web_standard_colors.json
 canvas:
   width: 1024

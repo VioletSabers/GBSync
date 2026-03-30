@@ -99,6 +99,12 @@ class RenderConfig:
     colors_by_corpus: Dict[str, List[str]]
     art_assets: Optional[ArtAssetsConfig] = None
     title_corpus_sources: Optional[List[CorpusSource]] = None
+    # Caption template file path (e.g. "templates/caption_templates_L1.json").
+    # Relative paths are resolved relative to the config YAML directory.
+    caption_templates_L1_path: Optional[str] = None
+    # Caption L2 template file path (e.g. "templates/caption_templates_L2.json").
+    # Relative paths are resolved relative to the config YAML directory.
+    caption_templates_L2_path: Optional[str] = None
 
 
 def _require_keys(payload: dict, keys: List[str], scope: str) -> None:
@@ -202,6 +208,28 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
                 )
             )
         title_sources = parsed_title or None
+
+    caption_templates_L1_path_raw = raw.get("caption_templates_L1_path")
+    caption_templates_L1_path: Optional[str]
+    if caption_templates_L1_path_raw is None:
+        caption_templates_L1_path = None
+    else:
+        if not isinstance(caption_templates_L1_path_raw, str):
+            raise ValueError("caption_templates_L1_path must be a string when provided.")
+        caption_templates_L1_path = caption_templates_L1_path_raw.strip()
+        if not caption_templates_L1_path:
+            raise ValueError("caption_templates_L1_path cannot be empty when provided.")
+
+    caption_templates_L2_path_raw = raw.get("caption_templates_L2_path")
+    caption_templates_L2_path: Optional[str]
+    if caption_templates_L2_path_raw is None:
+        caption_templates_L2_path = None
+    else:
+        if not isinstance(caption_templates_L2_path_raw, str):
+            raise ValueError("caption_templates_L2_path must be a string when provided.")
+        caption_templates_L2_path = caption_templates_L2_path_raw.strip()
+        if not caption_templates_L2_path:
+            raise ValueError("caption_templates_L2_path cannot be empty when provided.")
 
     if text_raw["min_segments_per_image"] > text_raw["max_segments_per_image"]:
         raise ValueError("text.min_segments_per_image must be <= text.max_segments_per_image")
@@ -385,6 +413,8 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         ),
         art_assets=_resolve_art_assets(raw.get("art_assets")),
         title_corpus_sources=title_sources,
+        caption_templates_L1_path=caption_templates_L1_path,
+        caption_templates_L2_path=caption_templates_L2_path,
     )
     _validate_references(config, base_dir=path.parent)
     return config

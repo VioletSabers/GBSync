@@ -1,0 +1,12 @@
+{
+  "zh": [
+    "书写“{text_all}”。",
+    "渲染“{text_all}”。",
+    "生成“{text_all}”。"
+  ],
+  "en": [
+    "Writing \"{text_all}\".",
+    "Rendering \"{text_all}\".",
+    "Generating \"{text_all}\"."
+  ]
+}
