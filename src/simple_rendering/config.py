@@ -62,6 +62,9 @@ class TextConfig:
     dual_column_write_width_ratio_max: float
     title_corpus_units_min: int
     title_corpus_units_max: int
+    # Per StyledSegment: random max visual lines before truncating remainder (layout efficiency).
+    min_lines_cap_per_segment: int
+    max_lines_cap_per_segment: int
 
 
 @dataclass
@@ -248,6 +251,12 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         raise ValueError("text.title_corpus_units_min and title_corpus_units_max must be >= 1.")
     if title_corpus_units_min > title_corpus_units_max:
         raise ValueError("text.title_corpus_units_min must be <= text.title_corpus_units_max.")
+    min_lines_cap = int(text_raw.get("min_lines_cap_per_segment", 1))
+    max_lines_cap = int(text_raw.get("max_lines_cap_per_segment", 256))
+    if min_lines_cap < 1 or max_lines_cap < 1:
+        raise ValueError("text.min_lines_cap_per_segment and max_lines_cap_per_segment must be >= 1.")
+    if min_lines_cap > max_lines_cap:
+        raise ValueError("text.min_lines_cap_per_segment must be <= text.max_lines_cap_per_segment.")
     if text_raw["min_emojis_between_segments"] > text_raw["max_emojis_between_segments"]:
         raise ValueError(
             "text.min_emojis_between_segments must be <= text.max_emojis_between_segments"
@@ -359,6 +368,8 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
             ),
             title_corpus_units_min=title_corpus_units_min,
             title_corpus_units_max=title_corpus_units_max,
+            min_lines_cap_per_segment=min_lines_cap,
+            max_lines_cap_per_segment=max_lines_cap,
         ),
         output=OutputConfig(
             root_dir=output_raw["root_dir"],

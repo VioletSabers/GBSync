@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import random
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -11,6 +12,18 @@ from .font_manager import StyledSegment
 
 LEADING_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》”’")
 TITLE_END_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’\"'…—-")
+
+
+def _sample_segment_line_cap(text_cfg: TextConfig, rng: random.Random) -> int:
+    lo = max(1, text_cfg.min_lines_cap_per_segment)
+    hi = max(lo, text_cfg.max_lines_cap_per_segment)
+    return rng.randint(lo, hi)
+
+
+def _segment_line_caps_for(
+    n: int, text_cfg: TextConfig, rng: random.Random
+) -> List[int]:
+    return [_sample_segment_line_cap(text_cfg, rng) for _ in range(n)]
 
 
 def _exit_mixed_line_placements(
@@ -98,12 +111,16 @@ def layout_segments(
     layout_variant: str = "",
     template_name: Optional[str] = None,
     allow_partial_layout: bool = False,
+    rng: Optional[random.Random] = None,
 ) -> LayoutResult:
+    if rng is None:
+        rng = random.Random(0)
     measurer_img = Image.new("RGB", (canvas.width, canvas.height))
     draw = ImageDraw.Draw(measurer_img)
     fonts = _build_font_cache(segments)
     if layout_mode in {"mixed_line", "full_text"}:
         variant = layout_variant or "top_left"
+        caps = _segment_line_caps_for(len(segments), text_cfg, rng)
         placements = _layout_mixed_line(
             segments,
             fonts,
@@ -112,6 +129,7 @@ def layout_segments(
             text_cfg,
             variant,
             allow_partial_layout=allow_partial_layout,
+            segment_line_caps=caps,
         )
         placements = _apply_block_vertical_anchor(
             placements, draw, canvas, variant, allow_partial_layout=allow_partial_layout
@@ -138,6 +156,7 @@ def layout_segments(
             variant,
             paragraph_spacing_override=paragraph_spacing_override,
             allow_partial_layout=allow_partial_layout,
+            rng=rng,
         )
         placements = _apply_block_vertical_anchor(
             placements, draw, canvas, variant, allow_partial_layout=allow_partial_layout
@@ -153,6 +172,7 @@ def layout_segments(
             text_cfg,
             variant,
             allow_partial_layout=allow_partial_layout,
+            rng=rng,
         )
         placements = _apply_block_vertical_anchor(
             placements, draw, canvas, variant, allow_partial_layout=allow_partial_layout
@@ -224,6 +244,7 @@ def _layout_mixed_line(
     width_ratio_range: Optional[Tuple[float, float]] = None,
     allow_partial_layout: bool = False,
     paragraph_index_offset: int = 0,
+    segment_line_caps: Optional[Sequence[int]] = None,
 ) -> Optional[List[PlacedText]]:
     placements: List[PlacedText] = []
     x = canvas.margin
@@ -374,7 +395,8 @@ def _layout_mixed_line(
         if allow_partial_layout and paragraph_lines:
             _commit_paragraph()
 
-    def flush_current_line() -> bool:
+    def flush_final_line() -> bool:
+        """Flush without per-segment line cap (end of document)."""
         nonlocal y
         if not current_line:
             return True
@@ -386,10 +408,35 @@ def _layout_mixed_line(
         current_line.clear()
         return True
 
-    for seg in segments:
+    for seg_idx, seg in enumerate(segments):
+        cap = (
+            segment_line_caps[seg_idx]
+            if segment_line_caps is not None and seg_idx < len(segment_line_caps)
+            else 10**9
+        )
+        lines_used = [0]
+
+        def flush_current_line() -> bool:
+            nonlocal y
+            if not current_line:
+                return True
+            if lines_used[0] >= cap:
+                current_line.clear()
+                return True
+            line_height = max(item.bottom - item.top for item in current_line)
+            if y + line_height > canvas.height - canvas.margin:
+                return False
+            _append_line_to_paragraph(current_line, y, line_height)
+            y += line_height + text_cfg.line_spacing
+            lines_used[0] += 1
+            current_line.clear()
+            return True
+
         font = fonts[(seg.font_path, seg.font_size)]
         tokens = _split_text_for_line_wrapping(seg.text)
         for token in tokens:
+            if lines_used[0] >= cap:
+                break
             if token == "\n":
                 if not flush_current_line():
                     _emit_buffered_paragraph_lines_if_partial()
@@ -504,7 +551,7 @@ def _layout_mixed_line(
                         )
                     )
                     x += advance
-    if not flush_current_line():
+    if not flush_final_line():
         _emit_buffered_paragraph_lines_if_partial()
         return _exit_mixed_line_placements(placements, allow_partial_layout)
     if not _commit_paragraph():
@@ -512,6 +559,69 @@ def _layout_mixed_line(
         return _fail_mixed_line_placements(placements, allow_partial_layout)
 
     return placements
+
+
+def _title_body_block_has_following_body(segments: Sequence[StyledSegment], seg_idx: int) -> bool:
+    """
+    True when segments form ... title+, line_break, body... starting at seg_idx (any title segment
+    in the run). Chinese titles are split into multiple StyledSegments with role=title, so we must
+    scan past consecutive title segments before expecting line_break (see font_manager fallback).
+    """
+    j = seg_idx + 1
+    while j < len(segments) and getattr(segments[j], "role", "") == "title":
+        j += 1
+    if j >= len(segments) or getattr(segments[j], "corpus_type", "") != "line_break":
+        return False
+    if j + 1 >= len(segments):
+        return False
+    return getattr(segments[j + 1], "role", "") == "body"
+
+
+def _build_merged_title_line_items(
+    line: str,
+    group_segments: Sequence[StyledSegment],
+    fonts: Dict[Tuple[str, int], ImageFont.FreeTypeFont],
+    draw: ImageDraw.ImageDraw,
+) -> Optional[List[_LineItem]]:
+    """Place one logical title line using per-segment fonts (Chinese title may be many segments)."""
+    if not line:
+        return []
+    if len(group_segments) == 1:
+        seg = group_segments[0]
+        font = fonts[(seg.font_path, seg.font_size)]
+        return _build_segment_line_items(line, seg, draw, font)
+    if group_segments[0].corpus_type == "english":
+        seg = group_segments[0]
+        font = fonts[(seg.font_path, seg.font_size)]
+        return _build_segment_line_items(line, seg, draw, font)
+    items: List[_LineItem] = []
+    remaining = line
+    for seg in group_segments:
+        if not remaining:
+            break
+        font = fonts[(seg.font_path, seg.font_size)]
+        st = seg.text
+        take = 0
+        while take < len(st) and take < len(remaining) and st[take] == remaining[take]:
+            take += 1
+        if take == 0:
+            seg0 = group_segments[0]
+            font0 = fonts[(seg0.font_path, seg0.font_size)]
+            return _build_segment_line_items(line, seg0, draw, font0)
+        sub = remaining[:take]
+        sub_items = _build_segment_line_items(sub, seg, draw, font)
+        if sub_items is None:
+            return None
+        items.extend(sub_items)
+        remaining = remaining[take:]
+    if remaining:
+        seg0 = group_segments[0]
+        font0 = fonts[(seg0.font_path, seg0.font_size)]
+        sub_items = _build_segment_line_items(remaining, seg0, draw, font0)
+        if sub_items is None:
+            return None
+        items.extend(sub_items)
+    return items
 
 
 def _layout_segmented(
@@ -524,7 +634,10 @@ def _layout_segmented(
     paragraph_spacing_override: Optional[int] = None,
     width_ratio_range: Optional[Tuple[float, float]] = None,
     allow_partial_layout: bool = False,
+    rng: Optional[random.Random] = None,
 ) -> Optional[List[PlacedText]]:
+    if rng is None:
+        rng = random.Random(0)
     paragraph_spacing = (
         paragraph_spacing_override if paragraph_spacing_override is not None else text_cfg.paragraph_spacing
     )
@@ -543,7 +656,9 @@ def _layout_segmented(
     pending_title_checkpoint: Optional[Tuple[int, int]] = None
     paragraph_idx = 0
     consumed_body_seg_idxs: set[int] = set()
+    consumed_title_seg_idxs: set[int] = set()
     skip_body_until_next_title = False
+    is_title_body_mode = paragraph_spacing_override is not None
 
     def _skip_current_paragraph_block() -> None:
         nonlocal y, pending_title_checkpoint, skip_body_until_next_title
@@ -557,10 +672,17 @@ def _layout_segmented(
     for seg_idx, seg in enumerate(segments):
         if seg_idx in consumed_body_seg_idxs:
             continue
+        if seg_idx in consumed_title_seg_idxs:
+            continue
         if skip_body_until_next_title:
             if seg.role == "title":
                 skip_body_until_next_title = False
             elif seg.role == "body":
+                # A prior failure set skip_body_until_next_title; if we still owe a title rollback
+                # (e.g. multi-segment Chinese title with checkpoint on first glyph), drop the orphan
+                # title before skipping remaining body segments for this block.
+                if pending_title_checkpoint is not None:
+                    _skip_current_paragraph_block()
                 continue
         if seg.corpus_type == "line_break":
             prev_role = segments[seg_idx - 1].role if seg_idx > 0 else ""
@@ -598,6 +720,7 @@ def _layout_segmented(
                 body_group_end += 1
             if body_group_end > seg_idx:
                 group_segments = list(segments[seg_idx : body_group_end + 1])
+                group_caps = _segment_line_caps_for(len(group_segments), text_cfg, rng)
                 group_canvas = CanvasConfig(
                     width=canvas.width,
                     height=canvas.height,
@@ -624,6 +747,7 @@ def _layout_segmented(
                     width_ratio_range=width_ratio_range,
                     allow_partial_layout=allow_partial_layout,
                     paragraph_index_offset=paragraph_idx,
+                    segment_line_caps=group_caps,
                 )
                 if group_placements is None:
                     if allow_partial_layout and placements:
@@ -635,6 +759,7 @@ def _layout_segmented(
                 dy = y - canvas.margin
                 shifted_group: List[PlacedText] = []
                 max_bottom = -1
+                body_group_skip_outer = False
                 for p in group_placements:
                     shifted = PlacedText(
                         text=p.text,
@@ -658,12 +783,21 @@ def _layout_segmented(
                                 pending_title_checkpoint = None
                                 for k in range(seg_idx + 1, body_group_end + 1):
                                     consumed_body_seg_idxs.add(k)
-                            return placements
+                                return placements
+                            if placements:
+                                return placements
+                            _skip_current_paragraph_block()
+                            for k in range(seg_idx + 1, body_group_end + 1):
+                                consumed_body_seg_idxs.add(k)
+                            body_group_skip_outer = True
+                            break
                         _skip_current_paragraph_block()
                         shifted_group = []
                         break
                     max_bottom = max(max_bottom, b)
                     shifted_group.append(shifted)
+                if body_group_skip_outer:
+                    continue
                 if shifted_group:
                     placements.extend(shifted_group)
                     y = max(y, max_bottom)
@@ -672,50 +806,145 @@ def _layout_segmented(
                         consumed_body_seg_idxs.add(k)
                     continue
         if seg.role == "title":
-            has_following_body = (
-                seg_idx + 2 < len(segments)
-                and segments[seg_idx + 1].corpus_type == "line_break"
-                and segments[seg_idx + 2].role == "body"
-            )
-            pending_title_checkpoint = (len(placements), y) if has_following_body else None
-        font = fonts[(seg.font_path, seg.font_size)]
-        if seg.role == "title":
-            title_text = _strip_trailing_title_punctuation(seg.text)
+            title_end = seg_idx
+            while title_end + 1 < len(segments) and segments[title_end + 1].role == "title":
+                title_end += 1
+            group_segments = list(segments[seg_idx : title_end + 1])
+            has_following_body = _title_body_block_has_following_body(segments, seg_idx)
+            is_first_title_in_block = seg_idx == 0 or segments[seg_idx - 1].role != "title"
+            if has_following_body and is_first_title_in_block:
+                pending_title_checkpoint = (len(placements), y)
+            elif has_following_body and not is_first_title_in_block:
+                pass
+            else:
+                pending_title_checkpoint = None
+            merged_font = fonts[(group_segments[0].font_path, group_segments[0].font_size)]
+            merged_raw = "".join(s.text for s in group_segments)
+            title_text = _strip_trailing_title_punctuation(merged_raw)
             title_line = _truncate_text_to_single_line(
                 title_text,
-                font=font,
+                font=merged_font,
                 draw=draw,
                 max_width=line_target_width,
-                preserve_word=seg.corpus_type == "english",
+                preserve_word=group_segments[0].corpus_type == "english",
             )
             lines = [title_line] if title_line else []
-        else:
-            lines = _wrap_text_to_lines(
-                seg.text,
-                font,
-                draw,
-                line_target_width,
-                preserve_word=seg.corpus_type == "english",
-            )
-            # For title_body in justify mode: body should first form at least 2 lines,
-            # then drop the last line for cleaner visual balance. A single wrapped line uses
-            # h_align only (see justify_line below), not full justify.
-            if justify and seg.role == "body":
-                if lines is None:
-                    # Keep None semantics: wrapping failed (e.g. unbreakable token too long).
-                    pass
-                elif len(lines) >= 2:
-                    lines = lines[:-1]
-        if seg.role == "title" and not lines:
-            # If title cannot be rendered (e.g. emptied by truncation/sanitization),
-            # drop the whole title-body block to avoid orphan body paragraphs.
-            if pending_title_checkpoint is not None:
-                p_len, y0 = pending_title_checkpoint
-                del placements[p_len:]
-                y = y0
-            pending_title_checkpoint = None
-            skip_body_until_next_title = True
+            max_lines_cap = _sample_segment_line_cap(text_cfg, rng)
+            if isinstance(lines, list) and lines:
+                lines = lines[:max_lines_cap]
+            if not lines:
+                if pending_title_checkpoint is not None:
+                    p_len, y0 = pending_title_checkpoint
+                    del placements[p_len:]
+                    y = y0
+                pending_title_checkpoint = None
+                skip_body_until_next_title = True
+                for k in range(seg_idx + 1, title_end + 1):
+                    consumed_title_seg_idxs.add(k)
+                continue
+            for line_idx, line in enumerate(lines):
+                line_items = _build_merged_title_line_items(line, group_segments, fonts, draw)
+                if line_items is None:
+                    if allow_partial_layout and placements:
+                        return placements
+                    _skip_current_paragraph_block()
+                    break
+                if not line_items:
+                    if allow_partial_layout and placements:
+                        return placements
+                    _skip_current_paragraph_block()
+                    break
+                width = _measure_line_width_with_inline_gaps(line_items)
+                line_height = max(item.bottom - item.top for item in line_items)
+                if line and width <= 0:
+                    if allow_partial_layout and placements:
+                        return placements
+                    _skip_current_paragraph_block()
+                    break
+                if line_height <= 0:
+                    if allow_partial_layout and placements:
+                        return placements
+                    _skip_current_paragraph_block()
+                    break
+                if width > line_target_width:
+                    if allow_partial_layout and placements:
+                        return placements
+                    _skip_current_paragraph_block()
+                    break
+                if y + line_height > canvas.height - canvas.margin:
+                    if allow_partial_layout and placements:
+                        return placements
+                    _skip_current_paragraph_block()
+                    break
+                body_multi_line = False
+                justify_line = False
+                gap_slacks: Optional[List[int]] = None
+                render_width = line_target_width if justify_line and width <= line_target_width else width
+                start_x = _pick_line_start_x(h_align, canvas, render_width, line_target_width)
+                x_cursor = start_x
+                baseline_y = _baseline_y_for_line_items(line_items, y)
+                for idx, item in enumerate(line_items):
+                    if idx > 0:
+                        x_cursor += _emoji_text_inline_gap(line_items[idx - 1], item)
+                    y_draw, anch = _inline_item_y_and_anchor(item, y, line_height, baseline_y)
+                    placements.append(
+                        PlacedText(
+                            text=item.text,
+                            x=x_cursor - item.left,
+                            y=y_draw,
+                            color=item.color,
+                            font=item.font,
+                            font_style=item.font_style,
+                            role=item.role,
+                            effects=item.effects,
+                            anchor=anch,
+                            paragraph_index=paragraph_idx,
+                            corpus_type=item.corpus_type,
+                        )
+                    )
+                    x_cursor += item.width
+                    if justify_line and gap_slacks is not None and idx < len(line_items) - 1:
+                        x_cursor += gap_slacks[idx]
+                y += line_height + text_cfg.line_spacing
+            for k in range(seg_idx + 1, title_end + 1):
+                consumed_title_seg_idxs.add(k)
+            if skip_body_until_next_title:
+                continue
+            y -= text_cfg.line_spacing
+            next_is_line_break = title_end < len(segments) - 1 and segments[title_end + 1].corpus_type == "line_break"
+            if title_end < len(segments) - 1 and not next_is_line_break:
+                next_role = segments[title_end + 1].role
+                if not (seg.role == "body" and next_role == "body"):
+                    y += paragraph_spacing
+            if y > canvas.height - canvas.margin:
+                return _exit_mixed_line_placements(placements, allow_partial_layout)
             continue
+
+        font = fonts[(seg.font_path, seg.font_size)]
+        lines = _wrap_text_to_lines(
+            seg.text,
+            font,
+            draw,
+            line_target_width,
+            preserve_word=seg.corpus_type == "english",
+        )
+        # For title_body in justify mode: body should first form at least 2 lines,
+        # then drop the last line for cleaner visual balance. A single wrapped line uses
+        # h_align only (see justify_line below), not full justify.
+        if justify and seg.role == "body":
+            if lines is None:
+                # Keep None semantics: wrapping failed (e.g. unbreakable token too long).
+                pass
+            elif len(lines) >= 2:
+                # Do not drop the last line if that would leave only empty lines (orphan title + no body).
+                truncated = lines[:-1]
+                if any(s.strip() for s in truncated):
+                    lines = truncated
+        if seg.role == "body" and isinstance(lines, list):
+            lines = [ln for ln in lines if ln.strip()]
+        max_lines_cap = _sample_segment_line_cap(text_cfg, rng)
+        if isinstance(lines, list) and lines:
+            lines = lines[:max_lines_cap]
         if seg.role == "body" and not lines:
             # If body disappears after justify rules, drop the paired title as well.
             if allow_partial_layout and placements:
@@ -879,7 +1108,10 @@ def _layout_dual_column(
     text_cfg: TextConfig,
     variant: str,
     allow_partial_layout: bool = False,
+    rng: Optional[random.Random] = None,
 ) -> Optional[List[PlacedText]]:
+    if rng is None:
+        rng = random.Random(0)
     blocks = _split_segments_for_dual_column(segments)
     if not blocks:
         return None
@@ -958,6 +1190,7 @@ def _layout_dual_column(
             paragraph_spacing_override=text_cfg.paragraph_spacing,
             width_ratio_range=width_ratio_range,
             allow_partial_layout=allow_partial_layout,
+            rng=rng,
         )
         right_placements = _layout_segmented(
             right,
@@ -969,8 +1202,11 @@ def _layout_dual_column(
             paragraph_spacing_override=text_cfg.paragraph_spacing,
             width_ratio_range=width_ratio_range,
             allow_partial_layout=allow_partial_layout,
+            rng=rng,
         )
     else:
+        left_caps = _segment_line_caps_for(len(left), text_cfg, rng)
+        right_caps = _segment_line_caps_for(len(right), text_cfg, rng)
         left_placements = _layout_mixed_line(
             left,
             fonts,
@@ -980,6 +1216,7 @@ def _layout_dual_column(
             column_variant,
             width_ratio_range=width_ratio_range,
             allow_partial_layout=allow_partial_layout,
+            segment_line_caps=left_caps,
         )
         right_placements = _layout_mixed_line(
             right,
@@ -990,6 +1227,7 @@ def _layout_dual_column(
             column_variant,
             width_ratio_range=width_ratio_range,
             allow_partial_layout=allow_partial_layout,
+            segment_line_caps=right_caps,
         )
     if allow_partial_layout:
         left_placements = left_placements if left_placements is not None else []

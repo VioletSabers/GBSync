@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import random
 from dataclasses import dataclass
@@ -12,6 +13,10 @@ from PIL import Image, ImageDraw, ImageFont
 from .color_utils import contrast_ratio
 from .config import CanvasConfig, RenderConfig, resolve_config_path
 from .corpus import CorpusItem
+
+# title_body: one sample-wide decision for all title blocks (bold + shadow/effects).
+_TITLE_BODY_GLOBAL_TITLE_BOLD = "title_body:title:__global_bold__"
+_TITLE_BODY_GLOBAL_TITLE_EFFECTS = "title_body:title:__global_effects__"
 
 
 @dataclass
@@ -307,13 +312,26 @@ def _style_one_segment(
             if role_style_cache is not None and template_name in {"title_body"}:
                 role_style_cache[role_color_key] = {"color": base_color}
         base_effects = _resolve_effects_config(config, template_name, base_role)
-        base_effects = _maybe_add_random_title_shadow(
-            base_effects=base_effects,
-            template_name=template_name,
-            role=base_role,
-            font_size=base_font_size,
-            rng=rng,
-        )
+        if template_name == "title_body" and base_role == "title" and role_style_cache is not None:
+            if _TITLE_BODY_GLOBAL_TITLE_EFFECTS in role_style_cache:
+                base_effects = copy.deepcopy(role_style_cache[_TITLE_BODY_GLOBAL_TITLE_EFFECTS])
+            else:
+                base_effects = _maybe_add_random_title_shadow(
+                    base_effects=base_effects,
+                    template_name=template_name,
+                    role=base_role,
+                    font_size=base_font_size,
+                    rng=rng,
+                )
+                role_style_cache[_TITLE_BODY_GLOBAL_TITLE_EFFECTS] = copy.deepcopy(base_effects)
+        else:
+            base_effects = _maybe_add_random_title_shadow(
+                base_effects=base_effects,
+                template_name=template_name,
+                role=base_role,
+                font_size=base_font_size,
+                rng=rng,
+            )
         if role_style_cache is not None and template_name in {"title_body"}:
             role_style_cache[role_style_key] = {
                 "font_size": base_font_size,
@@ -328,12 +346,20 @@ def _style_one_segment(
         base_color = str(cached["color"])
         base_effects = cached.get("effects") if isinstance(cached, dict) else None
 
-    # Random bold per segment (title/body independently), no italic.
+    # Random bold per segment (body); all titles in one image share one bold choice (title_body).
     if template_name == "title_body" and base_role in {"title", "body"}:
         bold_prob = 0.5
     else:
         bold_prob = float(role_cfg.get("bold_probability", 0.1))
-    is_bold = rng.random() < max(0.0, min(1.0, bold_prob))
+    bold_prob = max(0.0, min(1.0, bold_prob))
+    if template_name == "title_body" and base_role == "title" and role_style_cache is not None:
+        if _TITLE_BODY_GLOBAL_TITLE_BOLD in role_style_cache:
+            is_bold = bool(role_style_cache[_TITLE_BODY_GLOBAL_TITLE_BOLD])
+        else:
+            is_bold = rng.random() < bold_prob
+            role_style_cache[_TITLE_BODY_GLOBAL_TITLE_BOLD] = is_bold
+    else:
+        is_bold = rng.random() < bold_prob
     base_font_style = "bold" if is_bold else "normal"
 
     out: List[StyledSegment] = []

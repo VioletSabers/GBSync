@@ -72,6 +72,9 @@ text:
   english_max_length: 320
   title_corpus_units_min: 1
   title_corpus_units_max: 5
+  # Per segment: random max line count; extra wrapped lines are truncated (faster layout, fewer rollbacks).
+  min_lines_cap_per_segment: 3
+  max_lines_cap_per_segment: 10
 output:
   root_dir: ../../output/SimpleRendering_1024_round01/config_01_cn_color
   image_dir: images

@@ -466,6 +466,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 layout_variant=layout_variant,
                 template_name=template_name,
                 allow_partial_layout=True,
+                rng=rng,
             )
             if not _has_rendered_text(layout_result):
                 raise ValueError("No rendered text placements; resample.")
@@ -823,6 +824,7 @@ def _generate_single_sample_fallback(
                 layout_variant=layout_variant,
                 template_name=None,
                 allow_partial_layout=True,
+                rng=rng,
             )
             if not _has_rendered_text(layout_result):
                 continue
@@ -1790,6 +1792,7 @@ def _build_title_body_segments_resilient(
                     layout_variant=layout_variant,
                     template_name="title_body",
                     allow_partial_layout=True,
+                    rng=rng,
                 )
                 if not _has_rendered_text(lr):
                     continue
@@ -1991,6 +1994,7 @@ def _build_full_text_segments_resilient(
                     layout_variant=layout_variant,
                     template_name=None,
                     allow_partial_layout=True,
+                    rng=rng,
                 )
                 if not _has_rendered_text(lr):
                     continue
