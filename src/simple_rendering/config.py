@@ -105,6 +105,9 @@ class RenderConfig:
     # Caption L2 template file path (e.g. "templates/caption_templates_L2.json").
     # Relative paths are resolved relative to the config YAML directory.
     caption_templates_L2_path: Optional[str] = None
+    # Caption L3 template file path (e.g. "templates/caption_templates_L3.json").
+    # Relative paths are resolved relative to the config YAML directory.
+    caption_templates_L3_path: Optional[str] = None
 
 
 def _require_keys(payload: dict, keys: List[str], scope: str) -> None:
@@ -230,6 +233,17 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         caption_templates_L2_path = caption_templates_L2_path_raw.strip()
         if not caption_templates_L2_path:
             raise ValueError("caption_templates_L2_path cannot be empty when provided.")
+
+    caption_templates_L3_path_raw = raw.get("caption_templates_L3_path")
+    caption_templates_L3_path: Optional[str]
+    if caption_templates_L3_path_raw is None:
+        caption_templates_L3_path = None
+    else:
+        if not isinstance(caption_templates_L3_path_raw, str):
+            raise ValueError("caption_templates_L3_path must be a string when provided.")
+        caption_templates_L3_path = caption_templates_L3_path_raw.strip()
+        if not caption_templates_L3_path:
+            raise ValueError("caption_templates_L3_path cannot be empty when provided.")
 
     if text_raw["min_segments_per_image"] > text_raw["max_segments_per_image"]:
         raise ValueError("text.min_segments_per_image must be <= text.max_segments_per_image")
@@ -415,6 +429,7 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         title_corpus_sources=title_sources,
         caption_templates_L1_path=caption_templates_L1_path,
         caption_templates_L2_path=caption_templates_L2_path,
+        caption_templates_L3_path=caption_templates_L3_path,
     )
     _validate_references(config, base_dir=path.parent)
     return config

@@ -1,0 +1,22 @@
+{
+  "zh": {
+    "full_text": [
+      "画面由多段文本组成。",
+      "该画面包含多段连续文本。"
+    ],
+    "title_body": [
+      "画面中包含多段由标题和正文组成的文本。",
+      "该画面由多个标题-正文文本块构成。"
+    ]
+  },
+  "en": {
+    "full_text": [
+      "The scene is composed of multiple text paragraphs.",
+      "This scene contains multiple continuous text segments."
+    ],
+    "title_body": [
+      "The scene contains multiple text blocks, each with a title and a body.",
+      "This scene is composed of several title-body text groups."
+    ]
+  }
+}

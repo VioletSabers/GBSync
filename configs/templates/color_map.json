@@ -1,0 +1,1183 @@
+{
+  "#000000": {
+    "zh": [
+      "黑色",
+      "墨黑色",
+      "纯黑"
+    ],
+    "en": [
+      "black",
+      "ink black",
+      "pure black"
+    ]
+  },
+  "#FFFFFF": {
+    "zh": [
+      "白色",
+      "纯白",
+      "雪白"
+    ],
+    "en": [
+      "white",
+      "pure white",
+      "snow white"
+    ]
+  },
+  "#111111": {
+    "zh": [
+      "深灰黑",
+      "炭黑色",
+      "近黑灰"
+    ],
+    "en": [
+      "dark charcoal",
+      "charcoal black",
+      "near-black gray"
+    ]
+  },
+  "#F8FAFC": {
+    "zh": [
+      "浅灰白",
+      "雾白色",
+      "云灰白"
+    ],
+    "en": [
+      "soft off-white",
+      "mist white",
+      "cloud white"
+    ]
+  },
+  "#2E8B57": {
+    "zh": [
+      "海绿色",
+      "松针绿",
+      "墨绿"
+    ],
+    "en": [
+      "sea green",
+      "pine green",
+      "deep green",
+      "seagreen"
+    ]
+  },
+  "#4B0082": {
+    "zh": [
+      "靛紫色",
+      "深紫色",
+      "紫罗兰深色",
+      "靛青"
+    ],
+    "en": [
+      "indigo",
+      "deep purple",
+      "dark violet"
+    ]
+  },
+  "#C71585": {
+    "zh": [
+      "玫红色",
+      "洋红色",
+      "深粉紫",
+      "中紫罗兰红"
+    ],
+    "en": [
+      "medium violet red",
+      "magenta rose",
+      "deep pink-purple",
+      "mediumvioletred"
+    ]
+  },
+  "#4169E1": {
+    "zh": [
+      "皇家蓝",
+      "亮蓝色",
+      "宝蓝色"
+    ],
+    "en": [
+      "royal blue",
+      "bright blue",
+      "azure blue",
+      "royalblue"
+    ]
+  },
+  "#8B008B": {
+    "zh": [
+      "深洋红",
+      "深紫红",
+      "紫红色"
+    ],
+    "en": [
+      "dark magenta",
+      "deep fuchsia",
+      "purple-magenta",
+      "darkmagenta"
+    ]
+  },
+  "#F0F8FF": {
+    "zh": [
+      "爱丽丝蓝"
+    ],
+    "en": [
+      "aliceblue"
+    ]
+  },
+  "#FAEBD7": {
+    "zh": [
+      "古董白"
+    ],
+    "en": [
+      "antiquewhite"
+    ]
+  },
+  "#00FFFF": {
+    "zh": [
+      "水绿色",
+      "青色"
+    ],
+    "en": [
+      "aqua",
+      "cyan"
+    ]
+  },
+  "#7FFFD4": {
+    "zh": [
+      "碧绿色"
+    ],
+    "en": [
+      "aquamarine"
+    ]
+  },
+  "#F0FFFF": {
+    "zh": [
+      "蔚蓝色"
+    ],
+    "en": [
+      "azure"
+    ]
+  },
+  "#F5F5DC": {
+    "zh": [
+      "米色"
+    ],
+    "en": [
+      "beige"
+    ]
+  },
+  "#FFE4C4": {
+    "zh": [
+      "乳脂色"
+    ],
+    "en": [
+      "bisque"
+    ]
+  },
+  "#FFEBCD": {
+    "zh": [
+      "杏仁白"
+    ],
+    "en": [
+      "blanchedalmond"
+    ]
+  },
+  "#0000FF": {
+    "zh": [
+      "蓝色"
+    ],
+    "en": [
+      "blue"
+    ]
+  },
+  "#8A2BE2": {
+    "zh": [
+      "蓝紫色"
+    ],
+    "en": [
+      "blueviolet"
+    ]
+  },
+  "#A52A2A": {
+    "zh": [
+      "棕色"
+    ],
+    "en": [
+      "brown"
+    ]
+  },
+  "#DEB887": {
+    "zh": [
+      "硬木色"
+    ],
+    "en": [
+      "burlywood"
+    ]
+  },
+  "#5F9EA0": {
+    "zh": [
+      "军校蓝"
+    ],
+    "en": [
+      "cadetblue"
+    ]
+  },
+  "#7FFF00": {
+    "zh": [
+      "查特酒绿"
+    ],
+    "en": [
+      "chartreuse"
+    ]
+  },
+  "#D2691E": {
+    "zh": [
+      "巧克力色"
+    ],
+    "en": [
+      "chocolate"
+    ]
+  },
+  "#FF7F50": {
+    "zh": [
+      "珊瑚色"
+    ],
+    "en": [
+      "coral"
+    ]
+  },
+  "#6495ED": {
+    "zh": [
+      "矢车菊蓝"
+    ],
+    "en": [
+      "cornflowerblue"
+    ]
+  },
+  "#FFF8DC": {
+    "zh": [
+      "玉米丝色"
+    ],
+    "en": [
+      "cornsilk"
+    ]
+  },
+  "#DC143C": {
+    "zh": [
+      "绯红"
+    ],
+    "en": [
+      "crimson"
+    ]
+  },
+  "#00008B": {
+    "zh": [
+      "深蓝色"
+    ],
+    "en": [
+      "darkblue"
+    ]
+  },
+  "#008B8B": {
+    "zh": [
+      "深青色"
+    ],
+    "en": [
+      "darkcyan"
+    ]
+  },
+  "#B8860B": {
+    "zh": [
+      "深金菊色"
+    ],
+    "en": [
+      "darkgoldenrod"
+    ]
+  },
+  "#A9A9A9": {
+    "zh": [
+      "深灰色"
+    ],
+    "en": [
+      "darkgray",
+      "darkgrey"
+    ]
+  },
+  "#006400": {
+    "zh": [
+      "深绿色"
+    ],
+    "en": [
+      "darkgreen"
+    ]
+  },
+  "#BDB76B": {
+    "zh": [
+      "深卡其色"
+    ],
+    "en": [
+      "darkkhaki"
+    ]
+  },
+  "#556B2F": {
+    "zh": [
+      "深橄榄绿"
+    ],
+    "en": [
+      "darkolivegreen"
+    ]
+  },
+  "#FF8C00": {
+    "zh": [
+      "深橙色"
+    ],
+    "en": [
+      "darkorange"
+    ]
+  },
+  "#9932CC": {
+    "zh": [
+      "深兰花紫"
+    ],
+    "en": [
+      "darkorchid"
+    ]
+  },
+  "#8B0000": {
+    "zh": [
+      "深红色"
+    ],
+    "en": [
+      "darkred"
+    ]
+  },
+  "#E9967A": {
+    "zh": [
+      "深鲑红"
+    ],
+    "en": [
+      "darksalmon"
+    ]
+  },
+  "#8FBC8F": {
+    "zh": [
+      "深海绿色"
+    ],
+    "en": [
+      "darkseagreen"
+    ]
+  },
+  "#483D8B": {
+    "zh": [
+      "深石板蓝"
+    ],
+    "en": [
+      "darkslateblue"
+    ]
+  },
+  "#2F4F4F": {
+    "zh": [
+      "深石板灰"
+    ],
+    "en": [
+      "darkslategray",
+      "darkslategrey"
+    ]
+  },
+  "#00CED1": {
+    "zh": [
+      "深绿松石"
+    ],
+    "en": [
+      "darkturquoise"
+    ]
+  },
+  "#9400D3": {
+    "zh": [
+      "深紫罗兰"
+    ],
+    "en": [
+      "darkviolet"
+    ]
+  },
+  "#FF1493": {
+    "zh": [
+      "深粉色"
+    ],
+    "en": [
+      "deeppink"
+    ]
+  },
+  "#00BFFF": {
+    "zh": [
+      "深天蓝"
+    ],
+    "en": [
+      "deepskyblue"
+    ]
+  },
+  "#696969": {
+    "zh": [
+      "暗灰色"
+    ],
+    "en": [
+      "dimgray",
+      "dimgrey"
+    ]
+  },
+  "#1E90FF": {
+    "zh": [
+      "道奇蓝"
+    ],
+    "en": [
+      "dodgerblue"
+    ]
+  },
+  "#B22222": {
+    "zh": [
+      "砖红色"
+    ],
+    "en": [
+      "firebrick"
+    ]
+  },
+  "#FFFAF0": {
+    "zh": [
+      "花卉白"
+    ],
+    "en": [
+      "floralwhite"
+    ]
+  },
+  "#228B22": {
+    "zh": [
+      "森林绿"
+    ],
+    "en": [
+      "forestgreen"
+    ]
+  },
+  "#FF00FF": {
+    "zh": [
+      "紫红色",
+      "洋红"
+    ],
+    "en": [
+      "fuchsia",
+      "magenta"
+    ]
+  },
+  "#DCDCDC": {
+    "zh": [
+      "庚斯博罗灰"
+    ],
+    "en": [
+      "gainsboro"
+    ]
+  },
+  "#F8F8FF": {
+    "zh": [
+      "幽灵白"
+    ],
+    "en": [
+      "ghostwhite"
+    ]
+  },
+  "#FFD700": {
+    "zh": [
+      "金色"
+    ],
+    "en": [
+      "gold"
+    ]
+  },
+  "#DAA520": {
+    "zh": [
+      "金菊色"
+    ],
+    "en": [
+      "goldenrod"
+    ]
+  },
+  "#808080": {
+    "zh": [
+      "灰色"
+    ],
+    "en": [
+      "gray",
+      "grey"
+    ]
+  },
+  "#008000": {
+    "zh": [
+      "绿色"
+    ],
+    "en": [
+      "green"
+    ]
+  },
+  "#ADFF2F": {
+    "zh": [
+      "黄绿色"
+    ],
+    "en": [
+      "greenyellow"
+    ]
+  },
+  "#F0FFF0": {
+    "zh": [
+      "蜜瓜色"
+    ],
+    "en": [
+      "honeydew"
+    ]
+  },
+  "#FF69B4": {
+    "zh": [
+      "亮粉色"
+    ],
+    "en": [
+      "hotpink"
+    ]
+  },
+  "#CD5C5C": {
+    "zh": [
+      "印第安红"
+    ],
+    "en": [
+      "indianred"
+    ]
+  },
+  "#FFFFF0": {
+    "zh": [
+      "象牙白"
+    ],
+    "en": [
+      "ivory"
+    ]
+  },
+  "#F0E68C": {
+    "zh": [
+      "卡其色"
+    ],
+    "en": [
+      "khaki"
+    ]
+  },
+  "#E6E6FA": {
+    "zh": [
+      "薰衣草色"
+    ],
+    "en": [
+      "lavender"
+    ]
+  },
+  "#FFF0F5": {
+    "zh": [
+      "淡紫红"
+    ],
+    "en": [
+      "lavenderblush"
+    ]
+  },
+  "#7CFC00": {
+    "zh": [
+      "草坪绿"
+    ],
+    "en": [
+      "lawngreen"
+    ]
+  },
+  "#FFFACD": {
+    "zh": [
+      "柠檬绸"
+    ],
+    "en": [
+      "lemonchiffon"
+    ]
+  },
+  "#ADD8E6": {
+    "zh": [
+      "浅蓝色"
+    ],
+    "en": [
+      "lightblue"
+    ]
+  },
+  "#F08080": {
+    "zh": [
+      "浅珊瑚色"
+    ],
+    "en": [
+      "lightcoral"
+    ]
+  },
+  "#E0FFFF": {
+    "zh": [
+      "浅青色"
+    ],
+    "en": [
+      "lightcyan"
+    ]
+  },
+  "#FAFAD2": {
+    "zh": [
+      "浅金菊黄"
+    ],
+    "en": [
+      "lightgoldenrodyellow"
+    ]
+  },
+  "#D3D3D3": {
+    "zh": [
+      "浅灰色"
+    ],
+    "en": [
+      "lightgray",
+      "lightgrey"
+    ]
+  },
+  "#90EE90": {
+    "zh": [
+      "浅绿色"
+    ],
+    "en": [
+      "lightgreen"
+    ]
+  },
+  "#FFB6C1": {
+    "zh": [
+      "浅粉色"
+    ],
+    "en": [
+      "lightpink"
+    ]
+  },
+  "#FFA07A": {
+    "zh": [
+      "浅鲑红"
+    ],
+    "en": [
+      "lightsalmon"
+    ]
+  },
+  "#20B2AA": {
+    "zh": [
+      "浅海绿"
+    ],
+    "en": [
+      "lightseagreen"
+    ]
+  },
+  "#87CEFA": {
+    "zh": [
+      "浅天蓝"
+    ],
+    "en": [
+      "lightskyblue"
+    ]
+  },
+  "#778899": {
+    "zh": [
+      "浅石板灰"
+    ],
+    "en": [
+      "lightslategray",
+      "lightslategrey"
+    ]
+  },
+  "#B0C4DE": {
+    "zh": [
+      "浅钢蓝"
+    ],
+    "en": [
+      "lightsteelblue"
+    ]
+  },
+  "#FFFFE0": {
+    "zh": [
+      "浅黄色"
+    ],
+    "en": [
+      "lightyellow"
+    ]
+  },
+  "#00FF00": {
+    "zh": [
+      "亮绿色"
+    ],
+    "en": [
+      "lime"
+    ]
+  },
+  "#32CD32": {
+    "zh": [
+      "酸橙绿"
+    ],
+    "en": [
+      "limegreen"
+    ]
+  },
+  "#FAF0E6": {
+    "zh": [
+      "亚麻色"
+    ],
+    "en": [
+      "linen"
+    ]
+  },
+  "#800000": {
+    "zh": [
+      "栗色"
+    ],
+    "en": [
+      "maroon"
+    ]
+  },
+  "#66CDAA": {
+    "zh": [
+      "中等碧绿色"
+    ],
+    "en": [
+      "mediumaquamarine"
+    ]
+  },
+  "#0000CD": {
+    "zh": [
+      "中蓝色"
+    ],
+    "en": [
+      "mediumblue"
+    ]
+  },
+  "#BA55D3": {
+    "zh": [
+      "中兰花紫"
+    ],
+    "en": [
+      "mediumorchid"
+    ]
+  },
+  "#9370DB": {
+    "zh": [
+      "中紫色"
+    ],
+    "en": [
+      "mediumpurple"
+    ]
+  },
+  "#3CB371": {
+    "zh": [
+      "中海绿色"
+    ],
+    "en": [
+      "mediumseagreen"
+    ]
+  },
+  "#7B68EE": {
+    "zh": [
+      "中石板蓝"
+    ],
+    "en": [
+      "mediumslateblue"
+    ]
+  },
+  "#00FA9A": {
+    "zh": [
+      "中春绿色"
+    ],
+    "en": [
+      "mediumspringgreen"
+    ]
+  },
+  "#48D1CC": {
+    "zh": [
+      "中绿松石"
+    ],
+    "en": [
+      "mediumturquoise"
+    ]
+  },
+  "#191970": {
+    "zh": [
+      "午夜蓝"
+    ],
+    "en": [
+      "midnightblue"
+    ]
+  },
+  "#F5FFFA": {
+    "zh": [
+      "薄荷奶油"
+    ],
+    "en": [
+      "mintcream"
+    ]
+  },
+  "#FFE4E1": {
+    "zh": [
+      "雾玫瑰色"
+    ],
+    "en": [
+      "mistyrose"
+    ]
+  },
+  "#FFE4B5": {
+    "zh": [
+      "鹿皮色"
+    ],
+    "en": [
+      "moccasin"
+    ]
+  },
+  "#FFDEAD": {
+    "zh": [
+      "纳瓦霍白"
+    ],
+    "en": [
+      "navajowhite"
+    ]
+  },
+  "#000080": {
+    "zh": [
+      "海军蓝"
+    ],
+    "en": [
+      "navy"
+    ]
+  },
+  "#FDF5E6": {
+    "zh": [
+      "旧蕾丝色"
+    ],
+    "en": [
+      "oldlace"
+    ]
+  },
+  "#808000": {
+    "zh": [
+      "橄榄色"
+    ],
+    "en": [
+      "olive"
+    ]
+  },
+  "#6B8E23": {
+    "zh": [
+      "橄榄褐绿"
+    ],
+    "en": [
+      "olivedrab"
+    ]
+  },
+  "#FFA500": {
+    "zh": [
+      "橙色"
+    ],
+    "en": [
+      "orange"
+    ]
+  },
+  "#FF4500": {
+    "zh": [
+      "橙红色"
+    ],
+    "en": [
+      "orangered"
+    ]
+  },
+  "#DA70D6": {
+    "zh": [
+      "兰花紫"
+    ],
+    "en": [
+      "orchid"
+    ]
+  },
+  "#EEE8AA": {
+    "zh": [
+      "浅金菊色"
+    ],
+    "en": [
+      "palegoldenrod"
+    ]
+  },
+  "#98FB98": {
+    "zh": [
+      "淡绿色"
+    ],
+    "en": [
+      "palegreen"
+    ]
+  },
+  "#AFEEEE": {
+    "zh": [
+      "浅绿松石"
+    ],
+    "en": [
+      "paleturquoise"
+    ]
+  },
+  "#DB7093": {
+    "zh": [
+      "浅紫罗兰红"
+    ],
+    "en": [
+      "palevioletred"
+    ]
+  },
+  "#FFEFD5": {
+    "zh": [
+      "木瓜色"
+    ],
+    "en": [
+      "papayawhip"
+    ]
+  },
+  "#FFDAB9": {
+    "zh": [
+      "桃色"
+    ],
+    "en": [
+      "peachpuff"
+    ]
+  },
+  "#CD853F": {
+    "zh": [
+      "秘鲁色"
+    ],
+    "en": [
+      "peru"
+    ]
+  },
+  "#FFC0CB": {
+    "zh": [
+      "粉色"
+    ],
+    "en": [
+      "pink"
+    ]
+  },
+  "#DDA0DD": {
+    "zh": [
+      "李子色"
+    ],
+    "en": [
+      "plum"
+    ]
+  },
+  "#B0E0E6": {
+    "zh": [
+      "粉末蓝"
+    ],
+    "en": [
+      "powderblue"
+    ]
+  },
+  "#800080": {
+    "zh": [
+      "紫色"
+    ],
+    "en": [
+      "purple"
+    ]
+  },
+  "#663399": {
+    "zh": [
+      "丽贝卡紫"
+    ],
+    "en": [
+      "rebeccapurple"
+    ]
+  },
+  "#FF0000": {
+    "zh": [
+      "红色"
+    ],
+    "en": [
+      "red"
+    ]
+  },
+  "#BC8F8F": {
+    "zh": [
+      "玫瑰棕"
+    ],
+    "en": [
+      "rosybrown"
+    ]
+  },
+  "#8B4513": {
+    "zh": [
+      "马鞍棕"
+    ],
+    "en": [
+      "saddlebrown"
+    ]
+  },
+  "#FA8072": {
+    "zh": [
+      "鲑红色"
+    ],
+    "en": [
+      "salmon"
+    ]
+  },
+  "#F4A460": {
+    "zh": [
+      "沙棕色"
+    ],
+    "en": [
+      "sandybrown"
+    ]
+  },
+  "#FFF5EE": {
+    "zh": [
+      "贝壳白"
+    ],
+    "en": [
+      "seashell"
+    ]
+  },
+  "#A0522D": {
+    "zh": [
+      "赭石色"
+    ],
+    "en": [
+      "sienna"
+    ]
+  },
+  "#C0C0C0": {
+    "zh": [
+      "银色"
+    ],
+    "en": [
+      "silver"
+    ]
+  },
+  "#87CEEB": {
+    "zh": [
+      "天蓝色"
+    ],
+    "en": [
+      "skyblue"
+    ]
+  },
+  "#6A5ACD": {
+    "zh": [
+      "石板蓝"
+    ],
+    "en": [
+      "slateblue"
+    ]
+  },
+  "#708090": {
+    "zh": [
+      "石板灰"
+    ],
+    "en": [
+      "slategray",
+      "slategrey"
+    ]
+  },
+  "#FFFAFA": {
+    "zh": [
+      "雪白色"
+    ],
+    "en": [
+      "snow"
+    ]
+  },
+  "#00FF7F": {
+    "zh": [
+      "春绿色"
+    ],
+    "en": [
+      "springgreen"
+    ]
+  },
+  "#4682B4": {
+    "zh": [
+      "钢蓝色"
+    ],
+    "en": [
+      "steelblue"
+    ]
+  },
+  "#D2B48C": {
+    "zh": [
+      "棕褐色"
+    ],
+    "en": [
+      "tan"
+    ]
+  },
+  "#008080": {
+    "zh": [
+      "青绿色"
+    ],
+    "en": [
+      "teal"
+    ]
+  },
+  "#D8BFD8": {
+    "zh": [
+      "蓟紫色"
+    ],
+    "en": [
+      "thistle"
+    ]
+  },
+  "#FF6347": {
+    "zh": [
+      "番茄红"
+    ],
+    "en": [
+      "tomato"
+    ]
+  },
+  "#40E0D0": {
+    "zh": [
+      "绿松石"
+    ],
+    "en": [
+      "turquoise"
+    ]
+  },
+  "#EE82EE": {
+    "zh": [
+      "紫罗兰"
+    ],
+    "en": [
+      "violet"
+    ]
+  },
+  "#F5DEB3": {
+    "zh": [
+      "小麦色"
+    ],
+    "en": [
+      "wheat"
+    ]
+  },
+  "#F5F5F5": {
+    "zh": [
+      "烟白色"
+    ],
+    "en": [
+      "whitesmoke"
+    ]
+  },
+  "#FFFF00": {
+    "zh": [
+      "黄色"
+    ],
+    "en": [
+      "yellow"
+    ]
+  },
+  "#9ACD32": {
+    "zh": [
+      "黄绿色"
+    ],
+    "en": [
+      "yellowgreen"
+    ]
+  }
+}

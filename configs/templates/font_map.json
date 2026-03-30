@@ -1,0 +1,56 @@
+{
+  "NotoSansSC.ttf": {
+    "zh": "黑体",
+    "en": "Noto Sans SC",
+    "style_zh": ["现代无衬线字体", "清晰易读的正文字体", "简洁规整的印刷体"],
+    "style_en": ["modern sans-serif font", "clear readable body font", "clean printed style"]
+  },
+  "NotoSerifSC.ttf": {
+    "zh": "宋体",
+    "en": "Noto Serif SC",
+    "style_zh": ["典雅衬线字体", "庄重书卷风格", "传统印刷风字体"],
+    "style_en": ["elegant serif font", "bookish formal style", "traditional print style"]
+  },
+  "ZCOOLXiaoWei.ttf": {
+    "zh": "站酷小薇体",
+    "en": "ZCOOL XiaoWei",
+    "style_zh": ["温润手写风字体", "文艺标题字体", "柔和书写体"],
+    "style_en": ["gentle handwritten font", "artistic title font", "soft calligraphic style"]
+  },
+  "Roboto.ttf": {
+    "zh": "Roboto 字体",
+    "en": "Roboto",
+    "style_zh": ["现代英文无衬线字体", "科技感字体", "简洁英文正文字体"],
+    "style_en": ["modern English sans-serif font", "tech style font", "clean English body font"]
+  },
+  "OpenSans.ttf": {
+    "zh": "Open Sans 字体",
+    "en": "Open Sans",
+    "style_zh": ["中性英文无衬线字体", "通用阅读字体", "平衡舒适的字体"],
+    "style_en": ["neutral sans-serif font", "general reading font", "balanced comfortable style"]
+  },
+  "Lato.ttf": {
+    "zh": "Lato 字体",
+    "en": "Lato",
+    "style_zh": ["轻盈现代字体", "亲和力字体", "圆润英文风格"],
+    "style_en": ["light modern font", "friendly style font", "rounded English style"]
+  },
+  "Inter.ttf": {
+    "zh": "Inter 字体",
+    "en": "Inter",
+    "style_zh": ["界面友好字体", "数字产品风格字体", "高可读性字体"],
+    "style_en": ["UI-friendly font", "digital product style font", "high readability style"]
+  },
+  "Merriweather.ttf": {
+    "zh": "Merriweather 字体",
+    "en": "Merriweather",
+    "style_zh": ["典雅英文衬线字体", "报刊风字体", "叙事感字体"],
+    "style_en": ["elegant serif font", "newspaper style font", "narrative style font"]
+  },
+  "Apple Color Emoji.ttc": {
+    "zh": "苹果表情字体",
+    "en": "Apple Color Emoji",
+    "style_zh": ["彩色表情字体", "活泼表情风格", "趣味符号字体"],
+    "style_en": ["color emoji font", "playful emoji style", "fun symbol font"]
+  }
+}
