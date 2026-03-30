@@ -32,8 +32,7 @@ text:
   min_font_size: 24
   line_spacing: 12
   paragraph_spacing: 64
-  # full_text 多段：至少 2 个由 line_break 分隔的语料段（resilient 构建中的计划段数）
-  min_segments_per_image: 2
+  min_segments_per_image: 1
   max_segments_per_image: 8
   min_corpus_units_per_segment: 2
   max_corpus_units_per_segment: 10
@@ -70,7 +69,7 @@ text:
   chinese_min_length: 24
   chinese_max_length: 96
   english_min_length: 80
-  english_max_length: 240
+  english_max_length: 320
   title_corpus_units_min: 1
   title_corpus_units_max: 5
 output:

@@ -6,12 +6,12 @@ shared_color_palette_json: ../web_standard_colors.json
 canvas:
   width: 1024
   height: 1024
-  min_width: 1024
-  max_width: 1536
-  min_height: 1024
-  max_height: 1536
-  short_edge_min: 1024
-  short_edge_max: 1536
+  min_width: 2048
+  max_width: 3072
+  min_height: 2048
+  max_height: 3072
+  short_edge_min: 2048
+  short_edge_max: 3072
   aspect_ratios:
   - '1:1'
   - '2:3'
@@ -68,8 +68,8 @@ text:
   - '#F8FAFC'
   chinese_min_length: 24
   chinese_max_length: 96
-  english_min_length: 40
-  english_max_length: 120
+  english_min_length: 80
+  english_max_length: 320
   title_corpus_units_min: 1
   title_corpus_units_max: 5
 output:

@@ -8,6 +8,7 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from statistics import median
+from collections import defaultdict
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import pyarrow as pa
@@ -33,6 +34,87 @@ EMOJI_CANDIDATES = ["😀", "😄", "😎", "🚀", "✨", "🎯", "✅", "🔥"
 TITLE_END_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’\"'…—-")
 WORKER_STATE: Dict = {}
 WORKER_FONT_MANAGER: Optional[FontCoverageManager] = None
+
+
+def _textbbox_for_placed(draw: ImageDraw.ImageDraw, placed) -> Tuple[float, float, float, float]:
+    """Match renderer/layout anchor so line clustering aligns with drawn glyphs."""
+    kw = {}
+    if getattr(placed, "anchor", None):
+        kw["anchor"] = placed.anchor
+    return draw.textbbox(
+        (placed.x, placed.y), placed.text, font=placed.font, embedded_color=True, **kw
+    )
+
+
+def _bounds_for_placed(draw: ImageDraw.ImageDraw, placed) -> Optional[Tuple[float, float, float, float]]:
+    """Bounding box for clustering; keeps whitespace glyphs when textbbox is degenerate."""
+    left, top, right, bottom = _textbbox_for_placed(draw, placed)
+    if right > left and bottom > top:
+        return (float(left), float(top), float(right), float(bottom))
+    if not placed.text:
+        return None
+    font = getattr(placed, "font", None)
+    if font is None:
+        return None
+    fs = max(1.0, float(getattr(font, "size", 24) or 24))
+    try:
+        tw = float(draw.textlength(placed.text, font=font))
+    except Exception:
+        tw = 0.0
+    if tw <= 1e-6:
+        tw = max(1.0, 0.25 * fs * len(placed.text))
+    x, y = float(placed.x), float(placed.y)
+    anch = getattr(placed, "anchor", None)
+    if anch == "ls":
+        return (x, y - 0.78 * fs, x + tw, y + 0.22 * fs)
+    if anch is None:
+        return (x, y, x + tw, y + fs)
+    return (x, y - 0.78 * fs, x + tw, y + 0.22 * fs)
+
+
+def _pick_line_style_anchor(group: List[Dict]) -> Dict:
+    """Prefer the color that covers the most characters (LTR); tie-break by leftmost span."""
+    by_cx = sorted(group, key=lambda i: i["cx"])
+    color_weight: Dict[str, int] = defaultdict(int)
+    first_pos: Dict[str, int] = {}
+    for i, item in enumerate(by_cx):
+        c = str(item.get("color", ""))
+        color_weight[c] += len(str(item.get("text", "")))
+        if c not in first_pos:
+            first_pos[c] = i
+    best_color = max(
+        color_weight,
+        key=lambda c: (color_weight[c], -first_pos.get(c, 0)),
+    )
+    return next((it for it in by_cx if str(it.get("color", "")) == best_color), group[0])
+
+
+def _pick_line_font_metrics(group: List[Dict]) -> Tuple[str, int, str]:
+    """Use the font of non-emoji text on the line; avoid recording Apple Color Emoji for mixed lines."""
+    by_cx = sorted(group, key=lambda i: i["cx"])
+    non_emoji = [
+        it
+        for it in by_cx
+        if str(it.get("corpus_type", "")) != "emoji" and str(it.get("text", "")).strip()
+    ]
+    if non_emoji:
+        best = min(
+            non_emoji,
+            key=lambda it: (-len(str(it.get("text", ""))), by_cx.index(it)),
+        )
+        return (
+            str(best.get("font_name", "")),
+            int(best.get("font_size", 0) or 0),
+            str(best.get("font_style", "normal")),
+        )
+    if not by_cx:
+        return "", 0, "normal"
+    best = min(by_cx, key=lambda it: (-len(str(it.get("text", ""))), by_cx.index(it)))
+    return (
+        str(best.get("font_name", "")),
+        int(best.get("font_size", 0) or 0),
+        str(best.get("font_style", "normal")),
+    )
 
 
 def run_generation(config_path: str, font_category_override: Optional[str] = None) -> None:
@@ -926,7 +1008,7 @@ def _build_content_list_from_ocr_rows(
     out: List[Dict] = []
     for idx, row in enumerate(ocr_rows):
         text = str(row.get("text", ""))
-        if not text:
+        if not text.strip():
             continue
         style = style_rows[idx] if idx < len(style_rows) else {}
         font_style = str(style.get("font_style", "normal"))
@@ -942,6 +1024,7 @@ def _build_content_list_from_ocr_rows(
                 "layout_format": layout_format,
                 "role": str(style.get("role", "body")),
                 "template_name": template_name or "",
+                "paragraph_index": int(style.get("paragraph_index", 0)),
             }
         )
     return out
@@ -969,7 +1052,7 @@ def _build_content_and_ocr_from_rendered_lines(
     line_rows: List[Dict] = []
     for idx, row in enumerate(ocr_rows):
         text = str(row.get("text", ""))
-        if not text:
+        if not text.strip():
             continue
         style = style_rows[idx] if idx < len(style_rows) else {}
         font_style = str(style.get("font_style", "normal"))
@@ -987,9 +1070,9 @@ def _build_content_and_ocr_from_rendered_lines(
                 "layout_format": f"{layout_mode}:{layout_variant}",
                 "role": str(style.get("role", "body")),
                 "template_name": template_name or "",
+                "paragraph_index": int(style.get("paragraph_index", 0)),
             }
         )
-    _assign_paragraph_index_to_line_rows(line_rows, layout_mode=layout_mode)
     content_lines = [
         {
             "paragraph_index": int(row["paragraph_index"]),
@@ -1018,34 +1101,6 @@ def _build_content_and_ocr_from_rendered_lines(
     return content_lines, ocr_out
 
 
-def _assign_paragraph_index_to_line_rows(line_rows: List[Dict], layout_mode: str) -> None:
-    if not line_rows:
-        return
-    if layout_mode == "title_body":
-        paragraph_idx = -1
-        prev_is_title = False
-        for row in line_rows:
-            is_title = row.get("role") == "title"
-            if is_title and not prev_is_title:
-                paragraph_idx += 1
-            if paragraph_idx < 0:
-                paragraph_idx = 0
-            row["paragraph_index"] = paragraph_idx
-            prev_is_title = is_title
-        return
-    paragraph_idx = 0
-    prev_bottom = None
-    gap_threshold = 32
-    for row in line_rows:
-        bbox = row.get("bbox", [])
-        top = min((pt[1] for pt in bbox), default=0) if isinstance(bbox, list) else 0
-        bottom = max((pt[1] for pt in bbox), default=0) if isinstance(bbox, list) else 0
-        if prev_bottom is not None and top - prev_bottom > gap_threshold:
-            paragraph_idx += 1
-        row["paragraph_index"] = paragraph_idx
-        prev_bottom = bottom
-
-
 def _build_grouped_style_rows(
     placements,
     canvas_width: int,
@@ -1058,13 +1113,13 @@ def _build_grouped_style_rows(
     draw = ImageDraw.Draw(Image.new("RGB", (max(1, canvas_width), max(1, canvas_height))))
     measured_items: List[Dict] = []
     for placed in placements:
-        left, top, right, bottom = draw.textbbox(
-            (placed.x, placed.y), placed.text, font=placed.font, embedded_color=True
-        )
-        if right <= left or bottom <= top:
+        bb = _bounds_for_placed(draw, placed)
+        if bb is None:
             continue
+        left, top, right, bottom = bb
         measured_items.append(
             {
+                "text": placed.text,
                 "left": float(left),
                 "top": float(top),
                 "right": float(right),
@@ -1078,6 +1133,8 @@ def _build_grouped_style_rows(
                 "font_style": str(getattr(placed, "font_style", "normal")),
                 "color": str(getattr(placed, "color", "")),
                 "role": str(getattr(placed, "role", "body")),
+                "paragraph_index": int(getattr(placed, "paragraph_index", 0)),
+                "corpus_type": str(getattr(placed, "corpus_type", "")),
             }
         )
     if not measured_items:
@@ -1118,15 +1175,17 @@ def _build_grouped_style_rows(
             group.sort(key=lambda item: item["cx"])
     out: List[Dict] = []
     for group in groups:
-        # Use first non-empty-role item as line style anchor.
-        anchor = next((item for item in group if item.get("role")), group[0])
+        color_anchor = _pick_line_style_anchor(group)
+        font_name, font_size, font_style = _pick_line_font_metrics(group)
+        para_idx = min(int(item.get("paragraph_index", 0)) for item in group)
         out.append(
             {
-                "font_name": anchor.get("font_name", ""),
-                "font_size": int(anchor.get("font_size", 0) or 0),
-                "font_style": str(anchor.get("font_style", "normal")),
-                "color": str(anchor.get("color", "")),
-                "role": str(anchor.get("role", "body")),
+                "font_name": font_name,
+                "font_size": font_size,
+                "font_style": font_style,
+                "color": str(color_anchor.get("color", "")),
+                "role": str(color_anchor.get("role", "body")),
+                "paragraph_index": para_idx,
             }
         )
     return out
@@ -1144,11 +1203,10 @@ def _build_ocr_attributes(
     draw = ImageDraw.Draw(Image.new("RGB", (max(1, canvas_width), max(1, canvas_height))))
     measured_items: List[Dict] = []
     for placed in placements:
-        left, top, right, bottom = draw.textbbox(
-            (placed.x, placed.y), placed.text, font=placed.font, embedded_color=True
-        )
-        if right <= left or bottom <= top:
+        bb = _bounds_for_placed(draw, placed)
+        if bb is None:
             continue
+        left, top, right, bottom = bb
         measured_items.append(
             {
                 "text": placed.text,

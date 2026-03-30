@@ -43,6 +43,9 @@ class PlacedText:
     effects: Optional[Dict[str, object]] = None
     # When set (e.g. "ls"), (x, y) is the Pillow text anchor; default None uses legacy top-left.
     anchor: Optional[str] = None
+    # Logical paragraph within this layout (line_break / commit boundaries); used for parquet export.
+    paragraph_index: int = 0
+    corpus_type: str = ""
 
 
 @dataclass
@@ -84,6 +87,7 @@ class _VerticalItem:
     font_style: str
     role: str
     effects: Optional[Dict[str, object]]
+    corpus_type: str = ""
 
 
 def layout_segments(
@@ -219,6 +223,7 @@ def _layout_mixed_line(
     variant: str,
     width_ratio_range: Optional[Tuple[float, float]] = None,
     allow_partial_layout: bool = False,
+    paragraph_index_offset: int = 0,
 ) -> Optional[List[PlacedText]]:
     placements: List[PlacedText] = []
     x = canvas.margin
@@ -254,7 +259,13 @@ def _layout_mixed_line(
     def _append_line_to_paragraph(items: List[_LineItem], line_y: int, line_height: int) -> None:
         paragraph_lines.append((list(items), line_y, line_height))
 
-    def _render_line(items: List[_LineItem], line_y: int, line_height: int, justify_line: bool) -> None:
+    def _render_line(
+        items: List[_LineItem],
+        line_y: int,
+        line_height: int,
+        justify_line: bool,
+        line_paragraph_index: int,
+    ) -> None:
         line_width = _measure_line_width_with_inline_gaps(items)
         gap_slacks: Optional[List[int]] = None
         if justify_line:
@@ -282,6 +293,8 @@ def _layout_mixed_line(
                         role=getattr(item, "role", "body"),
                         effects=getattr(item, "effects", None),
                         anchor=anch,
+                        paragraph_index=line_paragraph_index,
+                        corpus_type=item.corpus_type,
                     )
                 )
                 x_cursor += item.width
@@ -305,6 +318,8 @@ def _layout_mixed_line(
                         role=getattr(item, "role", "body"),
                         effects=getattr(item, "effects", None),
                         anchor=anch,
+                        paragraph_index=line_paragraph_index,
+                        corpus_type=item.corpus_type,
                     )
                 )
                 x_cursor += item.width
@@ -324,8 +339,15 @@ def _layout_mixed_line(
             else:
                 _, _, dropped_h = lines_to_render.pop()
                 y -= dropped_h + text_cfg.line_spacing
+        pidx = paragraph_index + paragraph_index_offset
         for items, line_y, line_h in lines_to_render:
-            _render_line(items, line_y, line_h, justify_line=paragraph_justify_line)
+            _render_line(
+                items,
+                line_y,
+                line_h,
+                justify_line=paragraph_justify_line,
+                line_paragraph_index=pidx,
+            )
         paragraph_lines.clear()
         paragraph_index += 1
         if width_ratio_range is not None:
@@ -601,6 +623,7 @@ def _layout_segmented(
                     variant=variant,
                     width_ratio_range=width_ratio_range,
                     allow_partial_layout=allow_partial_layout,
+                    paragraph_index_offset=paragraph_idx,
                 )
                 if group_placements is None:
                     if allow_partial_layout and placements:
@@ -623,6 +646,8 @@ def _layout_segmented(
                         role=p.role,
                         effects=p.effects,
                         anchor=getattr(p, "anchor", None),
+                        paragraph_index=getattr(p, "paragraph_index", 0),
+                        corpus_type=getattr(p, "corpus_type", ""),
                     )
                     l, t, r, b = draw.textbbox((shifted.x, shifted.y), shifted.text, font=shifted.font, embedded_color=True)
                     if b > canvas.height - canvas.margin:
@@ -769,6 +794,8 @@ def _layout_segmented(
                         role=item.role,
                         effects=item.effects,
                         anchor=anch,
+                        paragraph_index=paragraph_idx,
+                        corpus_type=item.corpus_type,
                     )
                 )
                 x_cursor += item.width
@@ -974,6 +1001,8 @@ def _layout_dual_column(
     x_left = 0
     x_right = split_x
     y_base = canvas.margin
+    left_para_max = max((getattr(p, "paragraph_index", 0) for p in left_placements), default=-1)
+    right_para_base = left_para_max + 1
     merged = [
         PlacedText(
             text=p.text,
@@ -985,6 +1014,8 @@ def _layout_dual_column(
             role=p.role,
             effects=p.effects,
             anchor=getattr(p, "anchor", None),
+            paragraph_index=getattr(p, "paragraph_index", 0),
+            corpus_type=getattr(p, "corpus_type", ""),
         )
         for p in left_placements
     ] + [
@@ -998,6 +1029,8 @@ def _layout_dual_column(
             role=p.role,
             effects=p.effects,
             anchor=getattr(p, "anchor", None),
+            paragraph_index=right_para_base + getattr(p, "paragraph_index", 0),
+            corpus_type=getattr(p, "corpus_type", ""),
         )
         for p in right_placements
     ]
@@ -1144,6 +1177,8 @@ def _layout_title_subtitle(
                 font_style=title_anchor.font_style,
                 role=title_anchor.role,
                 effects=title_anchor.effects,
+                paragraph_index=0,
+                corpus_type=title_anchor.corpus_type,
             )
         )
         y += line_h + text_cfg.line_spacing
@@ -1165,6 +1200,8 @@ def _layout_title_subtitle(
                 font_style=subtitle_anchor.font_style,
                 role=subtitle_anchor.role,
                 effects=subtitle_anchor.effects,
+                paragraph_index=1,
+                corpus_type=subtitle_anchor.corpus_type,
             )
         )
         y += line_h + text_cfg.line_spacing
@@ -1220,6 +1257,7 @@ def _layout_vertical(
     if direction not in {"rtl", "ltr"}:
         raise ValueError(f"Unsupported vertical direction: {direction}")
     placements: List[PlacedText] = []
+    paragraph_idx = 0
     y = canvas.margin
     if h_anchor == "left":
         x_cursor = canvas.margin if direction == "ltr" else canvas.width - canvas.margin
@@ -1247,6 +1285,7 @@ def _layout_vertical(
             if x_right > canvas.width - canvas.margin:
                 return False
             next_x_cursor = x_right + text_cfg.paragraph_spacing
+        pidx = paragraph_idx
         for item in current_col:
             # Align each glyph box horizontally to the center of current column.
             x_draw = x_left + (col_width - (item.left + item.width)) // 2 - item.left
@@ -1261,6 +1300,8 @@ def _layout_vertical(
                     font_style=item.font_style,
                     role=getattr(item, "role", "body"),
                     effects=getattr(item, "effects", None),
+                    paragraph_index=pidx,
+                    corpus_type=getattr(item, "corpus_type", ""),
                 )
             )
         x_cursor = next_x_cursor
@@ -1274,6 +1315,7 @@ def _layout_vertical(
             if ch == "\n":
                 if not flush_current_column():
                     return placements if placements else None
+                paragraph_idx += 1
                 continue
 
             left, top, right, bottom = _measure_text_bbox(draw, ch, font)
@@ -1306,6 +1348,7 @@ def _layout_vertical(
                             font_style=carry.font_style,
                             role=carry.role,
                             effects=carry.effects,
+                            corpus_type=carry.corpus_type,
                         )
                     )
                     y = canvas.margin + carry.height + text_cfg.line_spacing
@@ -1328,6 +1371,7 @@ def _layout_vertical(
                     font_style=seg.font_style,
                     role=seg.role,
                     effects=seg.effects,
+                    corpus_type=seg.corpus_type,
                 )
             )
             y += height + text_cfg.line_spacing
@@ -1384,6 +1428,8 @@ def _apply_block_vertical_anchor(
             role=item.role,
             effects=item.effects,
             anchor=getattr(item, "anchor", None),
+            paragraph_index=getattr(item, "paragraph_index", 0),
+            corpus_type=getattr(item, "corpus_type", ""),
         )
         for item in placements
     ]
