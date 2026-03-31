@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import math
 import random
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set
@@ -369,6 +370,12 @@ def _style_one_segment(
         font_manager=font_manager,
         requested_size=base_font_size,
     )
+    symbol_fallback_font = _pick_special_symbol_fallback(
+        config=config,
+        config_dir=config_dir,
+        font_manager=font_manager,
+        requested_size=base_font_size,
+    )
     prev_corpus_item: Optional[CorpusItem] = None
     for item in current_segment:
         if prev_corpus_item is not None and _needs_injected_ascii_space_between_corpus_items(
@@ -413,35 +420,21 @@ def _style_one_segment(
             prev_corpus_item = item
             continue
         else:
-            if item.corpus_type == "chinese":
-                # Character-level fallback to avoid tofu boxes:
-                # base font first, then Microsoft YaHei, and finally skip unsupported glyph.
-                out.extend(
-                    _build_chinese_segments_with_fallback(
-                        text=item.content,
-                        base_font=base_font,
-                        fallback_font=chinese_fallback_font,
-                        font_manager=font_manager,
-                        requested_size=base_font_size,
-                        base_color=base_color,
-                        base_font_style=base_font_style,
-                        base_role=base_role,
-                        base_effects=base_effects,
-                    )
-                )
-                prev_corpus_item = item
-                continue
-            out.append(
-                StyledSegment(
+            # Character-level fallback chain:
+            # base font -> Chinese fallback (Microsoft YaHei) -> special symbol fallback -> skip.
+            out.extend(
+                _build_text_segments_with_fallback(
                     text=item.content,
                     corpus_type=item.corpus_type,
-                    font_path=base_font,
-                    font_name=Path(base_font).name,
-                    color=base_color,
-                    font_size=base_font_size,
-                    font_style=base_font_style,
-                    role=base_role,
-                    effects=base_effects,
+                    base_font=base_font,
+                    chinese_fallback_font=chinese_fallback_font,
+                    symbol_fallback_font=symbol_fallback_font,
+                    font_manager=font_manager,
+                    requested_size=base_font_size,
+                    base_color=base_color,
+                    base_font_style=base_font_style,
+                    base_role=base_role,
+                    base_effects=base_effects,
                 )
             )
             prev_corpus_item = item
@@ -480,10 +473,12 @@ def _pick_font_for_text(
     return rng.choice(available)
 
 
-def _build_chinese_segments_with_fallback(
+def _build_text_segments_with_fallback(
     text: str,
+    corpus_type: str,
     base_font: str,
-    fallback_font: Optional[str],
+    chinese_fallback_font: Optional[str],
+    symbol_fallback_font: Optional[str],
     font_manager: FontCoverageManager,
     requested_size: int,
     base_color: str,
@@ -504,7 +499,7 @@ def _build_chinese_segments_with_fallback(
         out.append(
             StyledSegment(
                 text="".join(buffer_chars),
-                corpus_type="chinese",
+                corpus_type=corpus_type,
                 font_path=buffer_font,
                 font_name=Path(buffer_font).name,
                 color=base_color,
@@ -525,13 +520,21 @@ def _build_chinese_segments_with_fallback(
         ):
             chosen_font = base_font
         elif (
-            fallback_font
-            and font_manager.supports_text(fallback_font, ch)
-            and font_manager.is_renderable(fallback_font, ch, requested_size)
+            _is_cjk_char(ch)
+            and chinese_fallback_font
+            and font_manager.supports_text(chinese_fallback_font, ch)
+            and font_manager.is_renderable(chinese_fallback_font, ch, requested_size)
         ):
-            chosen_font = fallback_font
+            chosen_font = chinese_fallback_font
+        elif (
+            _is_special_symbol_char(ch)
+            and symbol_fallback_font
+            and font_manager.supports_text(symbol_fallback_font, ch)
+            and font_manager.is_renderable(symbol_fallback_font, ch, requested_size)
+        ):
+            chosen_font = symbol_fallback_font
         else:
-            # If both base and Microsoft YaHei cannot render this character, skip it.
+            # If fallback fonts cannot render this character, skip it.
             _flush_buffer()
             continue
         if buffer_font is None:
@@ -555,6 +558,9 @@ def _pick_microsoft_yahei_fallback(
     requested_size: int,
 ) -> Optional[str]:
     candidates: List[str] = []
+    configured_path = getattr(config, "fallback_chinese_font_path", None)
+    if configured_path:
+        candidates.append(str(resolve_config_path(str(configured_path), config_dir)))
     for path in config.fonts_by_corpus.get("chinese", []):
         resolved = str(resolve_config_path(path, config_dir))
         name = Path(resolved).name.lower()
@@ -581,6 +587,51 @@ def _pick_microsoft_yahei_fallback(
     for font_path in unique_candidates:
         try:
             if font_manager.is_renderable(font_path, "测", requested_size):
+                return font_path
+        except Exception:
+            continue
+    return None
+
+
+def _pick_special_symbol_fallback(
+    config: RenderConfig,
+    config_dir: Path,
+    font_manager: FontCoverageManager,
+    requested_size: int,
+) -> Optional[str]:
+    candidates: List[str] = []
+    configured_path = getattr(config, "fallback_symbol_font_path", None)
+    if configured_path:
+        candidates.append(str(resolve_config_path(str(configured_path), config_dir)))
+    # Prefer explicitly configured special/emoji fonts.
+    for path in config.fonts_by_corpus.get("emoji", []):
+        resolved = str(resolve_config_path(path, config_dir))
+        if Path(resolved).exists():
+            candidates.append(resolved)
+    # Common symbol fonts on macOS.
+    extra = [
+        Path("/System/Library/Fonts/Apple Symbols.ttf"),
+        Path("/System/Library/Fonts/Apple Color Emoji.ttc"),
+        Path("/Library/Fonts/Symbola.ttf"),
+    ]
+    for p in extra:
+        if p.exists():
+            candidates.append(str(p.resolve()))
+    seen: Set[str] = set()
+    unique_candidates: List[str] = []
+    for p in candidates:
+        if p in seen:
+            continue
+        seen.add(p)
+        unique_candidates.append(p)
+    for font_path in unique_candidates:
+        try:
+            # Probe with representative symbols.
+            if (
+                font_manager.is_renderable(font_path, "★", requested_size)
+                or font_manager.is_renderable(font_path, "✓", requested_size)
+                or font_manager.is_renderable(font_path, "→", requested_size)
+            ):
                 return font_path
         except Exception:
             continue
@@ -711,6 +762,35 @@ def _skip_coverage_char(ch: str) -> bool:
     if 0xFE00 <= cp <= 0xFE0F:  # Variation selectors
         return True
     return False
+
+
+def _is_cjk_char(ch: str) -> bool:
+    cp = ord(ch)
+    return (
+        0x4E00 <= cp <= 0x9FFF
+        or 0x3400 <= cp <= 0x4DBF
+        or 0x20000 <= cp <= 0x2A6DF
+        or 0x2A700 <= cp <= 0x2B73F
+        or 0x2B740 <= cp <= 0x2B81F
+        or 0x2B820 <= cp <= 0x2CEAF
+        or 0xF900 <= cp <= 0xFAFF
+    )
+
+
+def _is_special_symbol_char(ch: str) -> bool:
+    cp = ord(ch)
+    cat = unicodedata.category(ch)
+    if cat.startswith("S"):
+        return True
+    # Extra symbol-heavy blocks.
+    return (
+        0x2190 <= cp <= 0x21FF  # arrows
+        or 0x2200 <= cp <= 0x22FF  # math operators
+        or 0x2460 <= cp <= 0x24FF  # enclosed alphanumerics
+        or 0x25A0 <= cp <= 0x25FF  # geometric shapes
+        or 0x2600 <= cp <= 0x26FF  # misc symbols
+        or 0x2700 <= cp <= 0x27BF  # dingbats
+    )
 
 
 def _load_font_with_size_fallback(font_path: str, requested_size: int) -> ImageFont.FreeTypeFont:

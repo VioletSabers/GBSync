@@ -114,6 +114,12 @@ class RenderConfig:
     # Caption L4 template file path (e.g. "templates/caption_templates_L4.json").
     # Relative paths are resolved relative to the config YAML directory.
     caption_templates_L4_path: Optional[str] = None
+    # Optional fallback font path for Chinese glyphs (recommended: Microsoft YaHei).
+    # Relative paths are resolved relative to the config YAML directory.
+    fallback_chinese_font_path: Optional[str] = None
+    # Optional fallback font path for special symbols.
+    # Relative paths are resolved relative to the config YAML directory.
+    fallback_symbol_font_path: Optional[str] = None
 
 
 def _require_keys(payload: dict, keys: List[str], scope: str) -> None:
@@ -264,6 +270,26 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         caption_templates_L4_path = caption_templates_L4_path_raw.strip()
         if not caption_templates_L4_path:
             raise ValueError("caption_templates_L4_path cannot be empty when provided.")
+    fallback_chinese_font_path_raw = raw.get("fallback_chinese_font_path")
+    fallback_chinese_font_path: Optional[str]
+    if fallback_chinese_font_path_raw is None:
+        fallback_chinese_font_path = None
+    else:
+        if not isinstance(fallback_chinese_font_path_raw, str):
+            raise ValueError("fallback_chinese_font_path must be a string when provided.")
+        fallback_chinese_font_path = fallback_chinese_font_path_raw.strip()
+        if not fallback_chinese_font_path:
+            raise ValueError("fallback_chinese_font_path cannot be empty when provided.")
+    fallback_symbol_font_path_raw = raw.get("fallback_symbol_font_path")
+    fallback_symbol_font_path: Optional[str]
+    if fallback_symbol_font_path_raw is None:
+        fallback_symbol_font_path = None
+    else:
+        if not isinstance(fallback_symbol_font_path_raw, str):
+            raise ValueError("fallback_symbol_font_path must be a string when provided.")
+        fallback_symbol_font_path = fallback_symbol_font_path_raw.strip()
+        if not fallback_symbol_font_path:
+            raise ValueError("fallback_symbol_font_path cannot be empty when provided.")
 
     if text_raw["min_segments_per_image"] > text_raw["max_segments_per_image"]:
         raise ValueError("text.min_segments_per_image must be <= text.max_segments_per_image")
@@ -452,6 +478,8 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         caption_templates_L2_path=caption_templates_L2_path,
         caption_templates_L3_path=caption_templates_L3_path,
         caption_templates_L4_path=caption_templates_L4_path,
+        fallback_chinese_font_path=fallback_chinese_font_path,
+        fallback_symbol_font_path=fallback_symbol_font_path,
     )
     _validate_references(config, base_dir=path.parent)
     return config
@@ -644,6 +672,14 @@ def _validate_references(config: RenderConfig, base_dir: Path) -> None:
             resolved = _resolve_with_base(font_path, base_dir)
             if not resolved.exists():
                 raise ValueError(f"Font path does not exist: {resolved}")
+    if config.fallback_chinese_font_path:
+        resolved_fallback_cn = _resolve_with_base(config.fallback_chinese_font_path, base_dir)
+        if not resolved_fallback_cn.exists():
+            raise ValueError(f"fallback_chinese_font_path does not exist: {resolved_fallback_cn}")
+    if config.fallback_symbol_font_path:
+        resolved_fallback_symbol = _resolve_with_base(config.fallback_symbol_font_path, base_dir)
+        if not resolved_fallback_symbol.exists():
+            raise ValueError(f"fallback_symbol_font_path does not exist: {resolved_fallback_symbol}")
     if config.art_assets is not None:
         brush_dir = _resolve_with_base(config.art_assets.brush_textures_dir, base_dir)
         if not brush_dir.exists() or not brush_dir.is_dir():

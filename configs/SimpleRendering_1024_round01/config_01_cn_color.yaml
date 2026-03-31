@@ -6,6 +6,11 @@ caption_templates_L1_path: ../templates/caption_templates_L1.json
 caption_templates_L2_path: ../templates/caption_templates_L2.json
 caption_templates_L3_path: ../templates/caption_templates_L3.json
 caption_templates_L4_path: ../templates/caption_templates_L4.json
+# Optional fallback fonts:
+# - Chinese fallback (recommended Microsoft YaHei)
+# - Special symbol fallback
+# fallback_chinese_font_path: ../../font/common/MicrosoftYaHei.ttf
+# fallback_symbol_font_path: /System/Library/Fonts/Apple Symbols.ttf
 shared_color_palette_json: ../web_standard_colors.json
 canvas:
   width: 1024
