@@ -4,6 +4,7 @@ import json
 import os
 import math
 import random
+import uuid
 import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -387,15 +388,17 @@ def _build_caption_L3(
         )
         out_zh.append(_pick("zh", "scene_bg").replace("{text_bg_color}", bg_color_zh))
         out_en.append(_pick("en", "scene_bg").replace("{text_bg_color}", bg_color_en))
+    overall_justify_clause_zh = "，整体两端对齐" if overall_justify else ""
+    overall_justify_clause_en = ", fully justified" if overall_justify else ""
     out_zh.append(
         _pick("zh", "scene_overall_align")
         .replace("{overall_align}", overall_align)
-        .replace("{overall_justify}", "是" if overall_justify else "否")
+        .replace("{overall_justify_clause}", overall_justify_clause_zh)
     )
     out_en.append(
         _pick("en", "scene_overall_align")
         .replace("{overall_align}", overall_align)
-        .replace("{overall_justify}", "yes" if overall_justify else "no")
+        .replace("{overall_justify_clause}", overall_justify_clause_en)
     )
     if WORKER_LAYOUT_MODE_DESC_L3 is not None:
         mode_key = "title_body" if layout_mode == "title_body" else "full_text"
@@ -626,7 +629,7 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
     }
 
     for round_idx in range(1, config.num_rounds + 1):
-        rows, sample_logs = _generate_round_parallel(
+        rows, _sample_logs = _generate_round_parallel(
             config=config,
             round_idx=round_idx,
             base_seed=base_seed,
@@ -635,12 +638,10 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
         )
         round_parquet_path = parquet_root / f"round_{round_idx:04d}.parquet"
         _write_round_parquet(round_parquet_path, rows)
-        round_image_dir = image_root / f"round_{round_idx:04d}"
-        round_log_path = round_image_dir / f"round_{round_idx:04d}_generation_log.jsonl"
-        _write_round_log(round_log_path, sample_logs)
+        round_dir_name = _format_round_dir_name(round_idx)
+        round_image_dir = image_root / round_dir_name
         print(f"[Round {round_idx:04d}] image_dir: {round_image_dir}")
         print(f"[Round {round_idx:04d}] parquet_path: {round_parquet_path}")
-        print(f"[Round {round_idx:04d}] log_path: {round_log_path}")
 
 
 def _generate_round_parallel(
@@ -712,7 +713,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
     if font_manager is None:
         raise RuntimeError("Worker font manager is not initialized.")
 
-    round_dir = image_root / f"round_{round_idx:04d}"
+    round_dir = image_root / _format_round_dir_name(round_idx)
     round_dir.mkdir(parents=True, exist_ok=True)
     rng = random.Random(seed)
     max_retries = 60
@@ -943,7 +944,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
             )
             if not _has_rendered_text(layout_result):
                 raise ValueError("No rendered text placements; resample.")
-            image_id = f"r{round_idx:04d}_{sample_idx:08d}"
+            image_id = _build_image_id(sample_idx, rng)
             image_path = round_dir / f"{image_id}.png"
             render_image(
                 canvas_cfg=sampled_canvas,
@@ -952,7 +953,10 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 out_path=image_path,
                 background_image=background_image,
             )
-            relative_img_path = image_path.relative_to(image_root)
+            relative_img_path = _build_relative_img_path(
+                image_path=image_path,
+                path_prefix=str(getattr(config.output, "relative_img_path_prefix", "") or ""),
+            )
             if WORKER_CAPTION_TEMPLATES_L1 is None:
                 raise RuntimeError("Worker caption templates not initialized (caption_templates_L1 missing).")
             caption_template_zh = rng.choice(WORKER_CAPTION_TEMPLATES_L1["zh"])
@@ -965,7 +969,7 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
             caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["body"])
             row = _build_parquet_row(
                 image_id=image_id,
-                relative_img_path=str(relative_img_path),
+                relative_img_path=relative_img_path,
                 sampled_canvas=sampled_canvas,
                 layout_mode=layout_mode,
                 layout_result=layout_result,
@@ -1170,6 +1174,23 @@ def _build_mismatch_reason(
     return "；".join(reasons)
 
 
+def _build_relative_img_path(image_path: Path, path_prefix: str) -> str:
+    round_dir_name = image_path.parent.name
+    image_stem = image_path.stem
+    if path_prefix:
+        return f"{path_prefix}/{round_dir_name}.zip/{image_stem}"
+    return f"{round_dir_name}.zip/{image_stem}"
+
+
+def _format_round_dir_name(round_idx: int) -> str:
+    return f"{round_idx:06d}"
+
+
+def _build_image_id(sample_idx: int, rng: random.Random) -> str:
+    # Keep deterministic under seeded rng while using UUID naming format.
+    return f"{sample_idx:08d}_{uuid.UUID(int=rng.getrandbits(128))}"
+
+
 def _resolve_parallel_workers(config: RenderConfig) -> int:
     if config.parallel_workers is not None:
         return config.parallel_workers
@@ -1319,7 +1340,7 @@ def _generate_single_sample_fallback(
             )
             if not _has_rendered_text(layout_result):
                 continue
-            image_id = f"r{round_idx:04d}_{sample_idx:08d}"
+            image_id = _build_image_id(sample_idx, rng)
             image_path = round_dir / f"{image_id}.png"
             render_image(
                 canvas_cfg=sampled_canvas,
@@ -1328,7 +1349,10 @@ def _generate_single_sample_fallback(
                 out_path=image_path,
                 background_image=background_image,
             )
-            relative_img_path = image_path.relative_to(image_root)
+            relative_img_path = _build_relative_img_path(
+                image_path=image_path,
+                path_prefix=str(getattr(config.output, "relative_img_path_prefix", "") or ""),
+            )
             if WORKER_CAPTION_TEMPLATES_L1 is None:
                 raise RuntimeError("Worker caption templates not initialized (caption_templates_L1 missing).")
             caption_template_zh = rng.choice(WORKER_CAPTION_TEMPLATES_L1["zh"])
@@ -1341,7 +1365,7 @@ def _generate_single_sample_fallback(
             caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["body"])
             row = _build_parquet_row(
                 image_id=image_id,
-                relative_img_path=str(relative_img_path),
+                relative_img_path=relative_img_path,
                 sampled_canvas=sampled_canvas,
                 layout_mode=layout_mode,
                 layout_result=layout_result,

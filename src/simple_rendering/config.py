@@ -72,6 +72,9 @@ class OutputConfig:
     root_dir: str
     image_dir: str
     parquet_dir: str
+    # Optional prefix for parquet relative_img_path.
+    # Final format: <prefix>/<round_dir>.zip/<image_id>
+    relative_img_path_prefix: str = ""
 
 
 @dataclass
@@ -173,6 +176,10 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
         "text",
     )
     _require_keys(output_raw, ["root_dir", "image_dir", "parquet_dir"], "output")
+    relative_img_path_prefix_raw = output_raw.get("relative_img_path_prefix", "")
+    if not isinstance(relative_img_path_prefix_raw, str):
+        raise ValueError("output.relative_img_path_prefix must be a string when provided.")
+    relative_img_path_prefix = relative_img_path_prefix_raw.strip().strip("/")
 
     sources: List[CorpusSource] = []
     for i, source in enumerate(raw["corpus_sources"]):
@@ -417,6 +424,7 @@ def load_config(config_path: str, font_category_override: Optional[str] = None) 
             root_dir=output_raw["root_dir"],
             image_dir=output_raw["image_dir"],
             parquet_dir=output_raw["parquet_dir"],
+            relative_img_path_prefix=relative_img_path_prefix,
         ),
         corpus_sources=sources,
         fonts_by_corpus=resolved_fonts_by_corpus,

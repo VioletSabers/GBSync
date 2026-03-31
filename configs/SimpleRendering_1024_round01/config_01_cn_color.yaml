@@ -82,6 +82,7 @@ output:
   root_dir: ../../output/SimpleRendering_1024_round01/config_01_cn_color
   image_dir: images
   parquet_dir: parquet
+  relative_img_path_prefix: bucket-green-huadong2-711/01.USERS/13.c00848313/04.Data/03.EasyRendering/260331/round1_mid/cn_color/images
 corpus_sources:
 - path: ../../sample_data/chinese_gb_8105.jsonl
   corpus_type: chinese
