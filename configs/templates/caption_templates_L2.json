@@ -1,34 +1,12 @@
 {
-  "zh": {
-    "title": [
-      "书写标题“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
-      "渲染标题“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
-      "生成标题“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
-      "使用字体“{font_name}”，颜色“{text_color}”，渲染标题“{text_paragraph}”。",
-      "使用字体“{font_name}”，颜色“{text_color}”，书写标题“{text_paragraph}”。"
-    ],
-    "body": [
-      "书写正文段落“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
-      "渲染正文段落“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
-      "生成正文段落“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
-      "使用字体“{font_name}”，颜色“{text_color}”，渲染正文段落“{text_paragraph}”。",
-      "使用字体“{font_name}”，颜色“{text_color}”，书写正文段落“{text_paragraph}”。"
-    ]
-  },
-  "en": {
-    "title": [
-      "Write title \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
-      "Render title \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
-      "Generate title \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
-      "Use font \"{font_name}\", color \"{text_color}\", render title \"{text_paragraph}\".",
-      "Use font \"{font_name}\", color \"{text_color}\", write title \"{text_paragraph}\"."
-    ],
-    "body": [
-      "Write body paragraph \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
-      "Render body paragraph \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
-      "Generate body paragraph \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
-      "Use font \"{font_name}\", color \"{text_color}\", render body paragraph \"{text_paragraph}\".",
-      "Use font \"{font_name}\", color \"{text_color}\", write body paragraph \"{text_paragraph}\"."
-    ]
-  }
+  "zh": [
+    "文字颜色为{text_color}，文本内容为\"{text_paragraph}\"。",
+    "文本内容为\"{text_paragraph}\"，文字颜色为{text_color}。",
+    "使用{text_color}文字书写\"{text_paragraph}\"。"
+  ],
+  "en": [
+    "Text color is {text_color}, text content is \"{text_paragraph}\".",
+    "Text content is \"{text_paragraph}\", text color is {text_color}.",
+    "Use {text_color} text to write \"{text_paragraph}\"."
+  ]
 }

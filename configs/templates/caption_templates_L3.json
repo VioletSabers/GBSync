@@ -1,20 +1,34 @@
 {
   "zh": {
-    "scene_bg": ["画面背景颜色为{text_bg_color}。"],
-    "scene_overall_align": ["整体对齐方式为{overall_align}{overall_justify_clause}。"],
-    "title_intro": ["标题内容为{title_text}，对齐方式为{paragraph_align}。"],
-    "body_intro": ["正文对齐方式为{paragraph_align}{paragraph_justify_clause}。{effects_desc}"],
-    "line_desc": ["第{line_no}行：{line_text}。"],
-    "effect_bold": ["该段使用了加粗效果。"],
-    "effect_shadow": ["该段使用了阴影特效。"]
+    "title": [
+      "书写标题“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
+      "渲染标题“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
+      "生成标题“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
+      "使用字体“{font_name}”，颜色“{text_color}”，渲染标题“{text_paragraph}”。",
+      "使用字体“{font_name}”，颜色“{text_color}”，书写标题“{text_paragraph}”。"
+    ],
+    "body": [
+      "书写正文段落“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
+      "渲染正文段落“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
+      "生成正文段落“{text_paragraph}”，字体“{font_name}”，颜色“{text_color}”。",
+      "使用字体“{font_name}”，颜色“{text_color}”，渲染正文段落“{text_paragraph}”。",
+      "使用字体“{font_name}”，颜色“{text_color}”，书写正文段落“{text_paragraph}”。"
+    ]
   },
   "en": {
-    "scene_bg": ["The background color is {text_bg_color}."],
-    "scene_overall_align": ["Overall alignment is {overall_align}{overall_justify_clause}."],
-    "title_intro": ["Title content is {title_text}, alignment is {paragraph_align}."],
-    "body_intro": ["Body alignment is {paragraph_align}{paragraph_justify_clause}. {effects_desc}"],
-    "line_desc": ["Line {line_no}: {line_text}."],
-    "effect_bold": ["This paragraph uses bold styling."],
-    "effect_shadow": ["This paragraph uses shadow effects."]
+    "title": [
+      "Write title \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
+      "Render title \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
+      "Generate title \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
+      "Use font \"{font_name}\", color \"{text_color}\", render title \"{text_paragraph}\".",
+      "Use font \"{font_name}\", color \"{text_color}\", write title \"{text_paragraph}\"."
+    ],
+    "body": [
+      "Write body paragraph \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
+      "Render body paragraph \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
+      "Generate body paragraph \"{text_paragraph}\", font \"{font_name}\", color \"{text_color}\".",
+      "Use font \"{font_name}\", color \"{text_color}\", render body paragraph \"{text_paragraph}\".",
+      "Use font \"{font_name}\", color \"{text_color}\", write body paragraph \"{text_paragraph}\"."
+    ]
   }
 }

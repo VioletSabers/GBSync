@@ -5,6 +5,7 @@ samples_per_round: 50
 caption_templates_L1_path: ../templates/caption_templates_L1.json
 caption_templates_L2_path: ../templates/caption_templates_L2.json
 caption_templates_L3_path: ../templates/caption_templates_L3.json
+caption_templates_L4_path: ../templates/caption_templates_L4.json
 shared_color_palette_json: ../web_standard_colors.json
 canvas:
   width: 1024
