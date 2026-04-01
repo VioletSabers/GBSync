@@ -1589,9 +1589,9 @@ def _build_parquet_row(
         templates=WORKER_CAPTION_TEMPLATES_L4,
         rng=rng,
     )
-    # Use JSON with ensure_ascii=False so emoji and all BMP/supplementary chars are stored
-    # as UTF-8 text, not Python repr() escapes like \U0001f600 or \u200d.
-    content_dict = json.dumps(content_list, ensure_ascii=False)
+    # Store as Python literal string so booleans stay True/False for eval-based consumers.
+    # str(list[dict]) also keeps emoji as UTF-8 characters instead of \\U... escapes.
+    content_dict = str(content_list)
     ocr_attribute = json.dumps(ocr_rows, ensure_ascii=False)
     return {
         "ID": image_id,
