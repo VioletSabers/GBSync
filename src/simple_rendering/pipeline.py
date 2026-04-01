@@ -1824,9 +1824,14 @@ def _build_grouped_style_rows(
                 "bottom": float(bottom),
                 "cx": (left + right) / 2.0,
                 "cy": (top + bottom) / 2.0,
-                "font_name": getattr(placed, "font", None).path.split("/")[-1]
-                if getattr(getattr(placed, "font", None), "path", None)
-                else "",
+                "font_name": str(
+                    getattr(placed, "base_font_name", "")
+                    or (
+                        getattr(placed, "font", None).path.split("/")[-1]
+                        if getattr(getattr(placed, "font", None), "path", None)
+                        else ""
+                    )
+                ),
                 "font_size": int(getattr(getattr(placed, "font", None), "size", 0) or 0),
                 "font_style": str(getattr(placed, "font_style", "normal")),
                 "color": str(getattr(placed, "color", "")),

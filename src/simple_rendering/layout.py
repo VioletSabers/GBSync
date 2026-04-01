@@ -59,6 +59,8 @@ class PlacedText:
     # Logical paragraph within this layout (line_break / commit boundaries); used for parquet export.
     paragraph_index: int = 0
     corpus_type: str = ""
+    # Logical base font for this item; should remain stable even if per-char fallback happened.
+    base_font_name: str = ""
 
 
 @dataclass
@@ -83,6 +85,7 @@ class _LineItem:
     font: ImageFont.FreeTypeFont
     font_style: str
     corpus_type: str
+    base_font_name: str
     role: str
     effects: Optional[Dict[str, object]]
 
@@ -316,6 +319,7 @@ def _layout_mixed_line(
                         anchor=anch,
                         paragraph_index=line_paragraph_index,
                         corpus_type=item.corpus_type,
+                        base_font_name=item.base_font_name,
                     )
                 )
                 x_cursor += item.width
@@ -341,6 +345,7 @@ def _layout_mixed_line(
                         anchor=anch,
                         paragraph_index=line_paragraph_index,
                         corpus_type=item.corpus_type,
+                        base_font_name=item.base_font_name,
                     )
                 )
                 x_cursor += item.width
@@ -515,6 +520,7 @@ def _layout_mixed_line(
                                     font=carry.font,
                                     font_style=carry.font_style,
                                     corpus_type=carry.corpus_type,
+                                    base_font_name=carry.base_font_name,
                                     role=carry.role,
                                     effects=carry.effects,
                                 )
@@ -546,6 +552,7 @@ def _layout_mixed_line(
                             font=font,
                             font_style=seg.font_style,
                             corpus_type=seg.corpus_type,
+                            base_font_name=seg.base_font_name,
                             role=seg.role,
                             effects=seg.effects,
                         )
@@ -773,6 +780,7 @@ def _layout_segmented(
                         anchor=getattr(p, "anchor", None),
                         paragraph_index=getattr(p, "paragraph_index", 0),
                         corpus_type=getattr(p, "corpus_type", ""),
+                        base_font_name=getattr(p, "base_font_name", ""),
                     )
                     l, t, r, b = draw.textbbox((shifted.x, shifted.y), shifted.text, font=shifted.font, embedded_color=True)
                     if b > canvas.height - canvas.margin:
@@ -900,6 +908,7 @@ def _layout_segmented(
                             anchor=anch,
                             paragraph_index=paragraph_idx,
                             corpus_type=item.corpus_type,
+                            base_font_name=item.base_font_name,
                         )
                     )
                     x_cursor += item.width
@@ -1025,6 +1034,7 @@ def _layout_segmented(
                         anchor=anch,
                         paragraph_index=paragraph_idx,
                         corpus_type=item.corpus_type,
+                        base_font_name=item.base_font_name,
                     )
                 )
                 x_cursor += item.width
@@ -1093,6 +1103,7 @@ def _build_segment_line_items(
                 font=font,
                 font_style=seg.font_style,
                 corpus_type=seg.corpus_type,
+                base_font_name=seg.base_font_name,
                 role=seg.role,
                 effects=seg.effects,
             )
@@ -1254,6 +1265,7 @@ def _layout_dual_column(
             anchor=getattr(p, "anchor", None),
             paragraph_index=getattr(p, "paragraph_index", 0),
             corpus_type=getattr(p, "corpus_type", ""),
+            base_font_name=getattr(p, "base_font_name", ""),
         )
         for p in left_placements
     ] + [
@@ -1269,6 +1281,7 @@ def _layout_dual_column(
             anchor=getattr(p, "anchor", None),
             paragraph_index=right_para_base + getattr(p, "paragraph_index", 0),
             corpus_type=getattr(p, "corpus_type", ""),
+            base_font_name=getattr(p, "base_font_name", ""),
         )
         for p in right_placements
     ]
@@ -1417,6 +1430,7 @@ def _layout_title_subtitle(
                 effects=title_anchor.effects,
                 paragraph_index=0,
                 corpus_type=title_anchor.corpus_type,
+                base_font_name=title_anchor.base_font_name,
             )
         )
         y += line_h + text_cfg.line_spacing
@@ -1440,6 +1454,7 @@ def _layout_title_subtitle(
                 effects=subtitle_anchor.effects,
                 paragraph_index=1,
                 corpus_type=subtitle_anchor.corpus_type,
+                base_font_name=subtitle_anchor.base_font_name,
             )
         )
         y += line_h + text_cfg.line_spacing
@@ -1540,6 +1555,7 @@ def _layout_vertical(
                     effects=getattr(item, "effects", None),
                     paragraph_index=pidx,
                     corpus_type=getattr(item, "corpus_type", ""),
+                    base_font_name=getattr(item, "base_font_name", ""),
                 )
             )
         x_cursor = next_x_cursor
@@ -1668,6 +1684,7 @@ def _apply_block_vertical_anchor(
             anchor=getattr(item, "anchor", None),
             paragraph_index=getattr(item, "paragraph_index", 0),
             corpus_type=getattr(item, "corpus_type", ""),
+            base_font_name=getattr(item, "base_font_name", ""),
         )
         for item in placements
     ]

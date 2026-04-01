@@ -26,6 +26,8 @@ class StyledSegment:
     corpus_type: str
     font_path: str
     font_name: str
+    # Base font selected for this logical line/segment; keep stable for parquet export.
+    base_font_name: str
     color: str
     font_size: int
     font_style: str
@@ -123,6 +125,7 @@ def build_styled_segments(
                     corpus_type="line_break",
                     font_path=_pick_any_font_for_line_break(config, config_dir),
                     font_name="line_break",
+                    base_font_name="line_break",
                     color="#FFFFFF",
                     font_size=config.text.min_font_size,
                     font_style="normal",
@@ -160,6 +163,7 @@ def build_styled_segments(
                     corpus_type=seg.corpus_type,
                     font_path=seg.font_path,
                     font_name=seg.font_name,
+                    base_font_name=seg.base_font_name,
                     color=title_color if seg.role == "title" else seg.color,
                     font_size=seg.font_size,
                     font_style=seg.font_style,
@@ -175,6 +179,7 @@ def build_styled_segments(
                     corpus_type=seg.corpus_type,
                     font_path=seg.font_path,
                     font_name=seg.font_name,
+                    base_font_name=seg.base_font_name,
                     color=body_color if seg.role == "body" else seg.color,
                     font_size=seg.font_size,
                     font_style=seg.font_style,
@@ -387,6 +392,7 @@ def _style_one_segment(
                     corpus_type=base_corpus_type,
                     font_path=base_font,
                     font_name=Path(base_font).name,
+                    base_font_name=Path(base_font).name,
                     color=base_color,
                     font_size=base_font_size,
                     font_style=base_font_style,
@@ -410,6 +416,7 @@ def _style_one_segment(
                     corpus_type=item.corpus_type,
                     font_path=emoji_font,
                     font_name=Path(emoji_font).name,
+                    base_font_name=Path(base_font).name,
                     color=base_color,
                     font_size=base_font_size,
                     font_style="normal",
@@ -489,6 +496,7 @@ def _build_text_segments_with_fallback(
     out: List[StyledSegment] = []
     buffer_chars: List[str] = []
     buffer_font: Optional[str] = None
+    base_font_name = Path(base_font).name
 
     def _flush_buffer() -> None:
         nonlocal buffer_chars, buffer_font
@@ -502,6 +510,7 @@ def _build_text_segments_with_fallback(
                 corpus_type=corpus_type,
                 font_path=buffer_font,
                 font_name=Path(buffer_font).name,
+                base_font_name=base_font_name,
                 color=base_color,
                 font_size=requested_size,
                 font_style=base_font_style,
