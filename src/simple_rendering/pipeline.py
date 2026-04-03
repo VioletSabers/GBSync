@@ -137,8 +137,14 @@ def _load_caption_templates_L3_scene(templates_path: Path) -> Dict[str, Dict[str
         raise ValueError(f"caption L3 scene templates must be a JSON object: {templates_path}")
     required_keys = [
         "scene_bg",
+        "scene_bg_image",
+        "scene_text_fragment",
         "scene_overall_align",
         "title_intro",
+        "title_style",
+        "paragraph_style",
+        "paragraph_index_intro",
+        "paragraph_bridge",
         "paragraph_desc",
         "effect_bold",
         "effect_shadow",
@@ -168,7 +174,9 @@ def _load_caption_templates_L4(templates_path: Path) -> Dict[str, Dict[str, List
         "scene_bg",
         "scene_overall_align",
         "title_intro",
+        "title_style",
         "body_segment_intro",
+        "body_segment_style",
         "line_desc",
         "effect_bold",
         "effect_shadow",
@@ -436,6 +444,41 @@ def _caption_placeholder_text(text: str) -> str:
     return str(text)
 
 
+def _apply_caption_font_color_template(template: str, font_name: str, text_color: str) -> str:
+    """Replace {font_name} / {text_color}; strip decorative quotes around placeholders (same rule as L2)."""
+    t = template
+    for ph in ("{font_name}", "{text_color}"):
+        t = (
+            t.replace(f"“{ph}”", ph)
+            .replace(f"\"{ph}\"", ph)
+            .replace(f"'{ph}'", ph)
+            .replace(f"‘{ph}’", ph)
+        )
+    return t.replace("{font_name}", font_name).replace("{text_color}", text_color)
+
+
+def _caption_style_labels_for_block(block: Dict[str, object], rng: random.Random) -> Tuple[str, str, str, str]:
+    raw_font = str(block.get("font", "") or "")
+    raw_color = str(block.get("text_color", "") or "")
+    font_zh, font_en = _pick_font_caption_labels(raw_font, rng=rng, font_map=WORKER_FONT_MAP)
+    color_zh, color_en = _pick_color_caption_labels(raw_color, rng=rng, color_map=WORKER_COLOR_MAP)
+    return font_zh, font_en, color_zh, color_en
+
+
+def _count_l3_body_blocks_with_text(blocks: Sequence[Dict[str, object]]) -> int:
+    n = 0
+    for b in blocks:
+        if str(b.get("role", "body")) != "body":
+            continue
+        lines = b.get("lines", [])
+        if not isinstance(lines, list):
+            continue
+        joined = "\\n".join(str(x) for x in lines if str(x))
+        if joined.strip():
+            n += 1
+    return n
+
+
 def _pick_alignment_caption_phrase(align_key: str, lang: str, rng: random.Random) -> str:
     if WORKER_ALIGNMENT_PHRASES is None:
         return align_key
@@ -456,6 +499,7 @@ def _build_caption_L3(
 ) -> Tuple[str, str]:
     """Scene + layout + per-paragraph body text (paragraph_desc); L4 uses line_desc per line."""
     blocks = _group_content_blocks_with_lines(content_list)
+    body_total = _count_l3_body_blocks_with_text(blocks)
     overall_align, overall_justify = _layout_variant_to_alignment(layout_mode, layout_variant)
     align_zh = _pick_alignment_caption_phrase(overall_align, "zh", rng)
     align_en = _pick_alignment_caption_phrase(overall_align, "en", rng)
@@ -465,12 +509,17 @@ def _build_caption_L3(
 
     out_zh: List[str] = []
     out_en: List[str] = []
-    if not has_background_image:
+    if has_background_image:
+        out_zh.append(_pick("zh", "scene_bg_image"))
+        out_en.append(_pick("en", "scene_bg_image"))
+    else:
         bg_color_zh, bg_color_en = _pick_color_caption_labels(
             background_color, rng=rng, color_map=WORKER_COLOR_MAP
         )
         out_zh.append(_pick("zh", "scene_bg").replace("{text_bg_color}", bg_color_zh))
         out_en.append(_pick("en", "scene_bg").replace("{text_bg_color}", bg_color_en))
+    out_zh.append(_pick("zh", "scene_text_fragment"))
+    out_en.append(_pick("en", "scene_text_fragment"))
     overall_justify_clause_zh = "，整体两端对齐" if overall_justify else ""
     overall_justify_clause_en = ", fully justified" if overall_justify else ""
     out_zh.append(
@@ -506,6 +555,9 @@ def _build_caption_L3(
                 _pick("en", "title_intro")
                 .replace("{title_text}", title_t)
             )
+            fz, fe, cz, ce = _caption_style_labels_for_block(b, rng)
+            out_zh.append(_apply_caption_font_color_template(_pick("zh", "title_style"), fz, cz))
+            out_en.append(_apply_caption_font_color_template(_pick("en", "title_style"), fe, ce))
             if bool(b.get("is_bold", False)):
                 out_zh.append(_pick("zh", "effect_bold"))
                 out_en.append(_pick("en", "effect_bold"))
@@ -514,17 +566,45 @@ def _build_caption_L3(
                 out_en.append(_pick("en", "effect_shadow"))
             continue
 
-        if bool(b.get("is_bold", False)):
-            out_zh.append(_pick("zh", "effect_bold"))
-            out_en.append(_pick("en", "effect_bold"))
-        if bool(b.get("has_shadow", False)):
-            out_zh.append(_pick("zh", "effect_shadow"))
-            out_en.append(_pick("en", "effect_shadow"))
         if isinstance(lines, list):
             joined = "\\n".join(str(x) for x in lines if str(x))
             if joined.strip():
                 body_para_no += 1
                 para_t = _caption_placeholder_text(joined)
+                if body_para_no >= 2:
+                    prev_s = str(body_para_no - 1)
+                    next_s = str(body_para_no)
+                    out_zh.append(
+                        _pick("zh", "paragraph_bridge")
+                        .replace("{prev_no}", prev_s)
+                        .replace("{next_no}", next_s)
+                    )
+                    out_en.append(
+                        _pick("en", "paragraph_bridge")
+                        .replace("{prev_no}", prev_s)
+                        .replace("{next_no}", next_s)
+                    )
+                total_s = str(body_total)
+                idx_s = str(body_para_no)
+                out_zh.append(
+                    _pick("zh", "paragraph_index_intro")
+                    .replace("{paragraph_no}", idx_s)
+                    .replace("{paragraph_total}", total_s)
+                )
+                out_en.append(
+                    _pick("en", "paragraph_index_intro")
+                    .replace("{paragraph_no}", idx_s)
+                    .replace("{paragraph_total}", total_s)
+                )
+                fz, fe, cz, ce = _caption_style_labels_for_block(b, rng)
+                out_zh.append(_apply_caption_font_color_template(_pick("zh", "paragraph_style"), fz, cz))
+                out_en.append(_apply_caption_font_color_template(_pick("en", "paragraph_style"), fe, ce))
+                if bool(b.get("is_bold", False)):
+                    out_zh.append(_pick("zh", "effect_bold"))
+                    out_en.append(_pick("en", "effect_bold"))
+                if bool(b.get("has_shadow", False)):
+                    out_zh.append(_pick("zh", "effect_shadow"))
+                    out_en.append(_pick("en", "effect_shadow"))
                 out_zh.append(
                     _pick("zh", "paragraph_desc")
                     .replace("{paragraph_no}", str(body_para_no))
@@ -535,6 +615,20 @@ def _build_caption_L3(
                     .replace("{paragraph_no}", str(body_para_no))
                     .replace("{paragraph_text}", para_t)
                 )
+            else:
+                if bool(b.get("is_bold", False)):
+                    out_zh.append(_pick("zh", "effect_bold"))
+                    out_en.append(_pick("en", "effect_bold"))
+                if bool(b.get("has_shadow", False)):
+                    out_zh.append(_pick("zh", "effect_shadow"))
+                    out_en.append(_pick("en", "effect_shadow"))
+        else:
+            if bool(b.get("is_bold", False)):
+                out_zh.append(_pick("zh", "effect_bold"))
+                out_en.append(_pick("en", "effect_bold"))
+            if bool(b.get("has_shadow", False)):
+                out_zh.append(_pick("zh", "effect_shadow"))
+                out_en.append(_pick("en", "effect_shadow"))
 
     return "\n".join(out_zh), "\n".join(out_en)
 
@@ -599,6 +693,9 @@ def _build_caption_L4(
                 _pick("en", "title_intro")
                 .replace("{title_text}", title_t)
             )
+            fz, fe, cz, ce = _caption_style_labels_for_block(b, rng)
+            out_zh.append(_apply_caption_font_color_template(_pick("zh", "title_style"), fz, cz))
+            out_en.append(_apply_caption_font_color_template(_pick("en", "title_style"), fe, ce))
             if bool(b.get("is_bold", False)):
                 out_zh.append(_pick("zh", "effect_bold"))
                 out_en.append(_pick("en", "effect_bold"))
@@ -617,6 +714,17 @@ def _build_caption_L4(
         seg_no = str(body_para_no)
         out_zh.append(_pick("zh", "body_segment_intro").replace("{paragraph_no}", seg_no))
         out_en.append(_pick("en", "body_segment_intro").replace("{paragraph_no}", seg_no))
+        fz, fe, cz, ce = _caption_style_labels_for_block(b, rng)
+        out_zh.append(
+            _apply_caption_font_color_template(
+                _pick("zh", "body_segment_style").replace("{paragraph_no}", seg_no), fz, cz
+            )
+        )
+        out_en.append(
+            _apply_caption_font_color_template(
+                _pick("en", "body_segment_style").replace("{paragraph_no}", seg_no), fe, ce
+            )
+        )
 
         if bool(b.get("is_bold", False)):
             out_zh.append(_pick("zh", "effect_bold"))

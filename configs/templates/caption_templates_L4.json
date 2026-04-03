@@ -36,6 +36,18 @@
       "主标信息：“{title_text}”。",
       "标题文案设定为“{title_text}”。"
     ],
+    "title_style": [
+      "标题采用{font_name}字体，文字颜色为{text_color}。",
+      "标题字型为{font_name}，字色为{text_color}。",
+      "标题以{font_name}排版，并以{text_color}着色。",
+      "标题区域字体映射为{font_name}，颜色映射为{text_color}。",
+      "标题样式：{font_name}字体，{text_color}字色。",
+      "标题书写使用{font_name}，前景色为{text_color}。",
+      "标题在视觉上由{font_name}与{text_color}共同定义。",
+      "标题的字体与颜色分别为{font_name}与{text_color}。",
+      "标题渲染使用{font_name}，文本颜色为{text_color}。",
+      "标题字形设定{font_name}，色彩设定{text_color}。"
+    ],
     "body_segment_intro": [
       "第{paragraph_no}段中，",
       "接下来是第{paragraph_no}段。",
@@ -47,6 +59,18 @@
       "从第{paragraph_no}段起：",
       "叙述第{paragraph_no}段：",
       "定位到第{paragraph_no}段："
+    ],
+    "body_segment_style": [
+      "第{paragraph_no}段采用{font_name}字体，文字颜色为{text_color}。",
+      "第{paragraph_no}段字型为{font_name}，字色为{text_color}。",
+      "第{paragraph_no}段以{font_name}排版，并以{text_color}显示。",
+      "第{paragraph_no}段字体映射为{font_name}，颜色映射为{text_color}。",
+      "第{paragraph_no}段样式：{font_name}字体，{text_color}字色。",
+      "第{paragraph_no}段书写使用{font_name}，前景色为{text_color}。",
+      "第{paragraph_no}段在{font_name}字体下以{text_color}呈现。",
+      "第{paragraph_no}段的字体与颜色分别为{font_name}与{text_color}。",
+      "第{paragraph_no}段渲染使用{font_name}，文本颜色为{text_color}。",
+      "第{paragraph_no}段字形设定{font_name}，色彩设定{text_color}。"
     ],
     "line_desc": [
       "第{line_no}行：“{line_text}”。",
@@ -122,6 +146,18 @@
       "A prominent title \"{title_text}\" is featured.",
       "The text for the title part is \"{title_text}\"."
     ],
+    "title_style": [
+      "The title uses font {font_name} and text color {text_color}.",
+      "Title typography: {font_name}; color: {text_color}.",
+      "The heading is set in {font_name} with {text_color} text.",
+      "Title font: {font_name}; title color: {text_color}.",
+      "The title appears in {font_name} with {text_color} glyphs.",
+      "Title styling specifies {font_name} and {text_color}.",
+      "The title block uses typeface {font_name} and foreground {text_color}.",
+      "For the title, face is {font_name} and ink is {text_color}.",
+      "Title attributes: {font_name} font, {text_color} color.",
+      "The title is rendered with {font_name} and tinted {text_color}."
+    ],
     "body_segment_intro": [
       "In paragraph {paragraph_no}, ",
       "Next is paragraph {paragraph_no}: ",
@@ -133,6 +169,18 @@
       "Turning to paragraph {paragraph_no}: ",
       "At paragraph {paragraph_no}: ",
       "The text of paragraph {paragraph_no}: "
+    ],
+    "body_segment_style": [
+      "Paragraph {paragraph_no} uses font {font_name} and text color {text_color}.",
+      "In paragraph {paragraph_no}, typography is {font_name} and color is {text_color}.",
+      "Paragraph {paragraph_no} is set in {font_name} with {text_color} foreground.",
+      "For paragraph {paragraph_no}, font {font_name} and tint {text_color} apply.",
+      "Paragraph {paragraph_no}: typeface {font_name}; chroma {text_color}.",
+      "Segment {paragraph_no} selects {font_name} and paints text in {text_color}.",
+      "Paragraph {paragraph_no} styling: {font_name}, {text_color}.",
+      "Lines in paragraph {paragraph_no} use {font_name} and {text_color}.",
+      "Paragraph {paragraph_no} maps font to {font_name} and color to {text_color}.",
+      "The {paragraph_no}th paragraph renders with {font_name} and {text_color}."
     ],
     "line_desc": [
       "Line {line_no}: \"{line_text}\".",
