@@ -6,7 +6,7 @@ caption_templates_L1_path: ../templates/caption_templates_L1.json
 caption_templates_L2_path: ../templates/caption_templates_L2.json
 caption_templates_L3_path: ../templates/caption_templates_L3.json
 caption_templates_L4_path: ../templates/caption_templates_L4.json
-shared_color_palette_json: ../web_standard_colors.json
+color_map_json: ../templates/color_map.json
 canvas:
   width: 1024
   height: 1024

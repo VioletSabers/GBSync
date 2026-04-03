@@ -2,7 +2,7 @@ seed: 20260326
 parallel_workers: 6
 num_rounds: 1
 samples_per_round: 50
-shared_color_palette_json: ./web_standard_colors.json
+color_map_json: ./templates/color_map.json
 
 canvas:
   width: 2048

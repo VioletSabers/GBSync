@@ -11,7 +11,7 @@ caption_templates_L4_path: ../templates/caption_templates_L4.json
 # - Special symbol fallback
 # fallback_chinese_font_path: ../../font/common/MicrosoftYaHei.ttf
 # fallback_symbol_font_path: /System/Library/Fonts/Apple Symbols.ttf
-shared_color_palette_json: ../web_standard_colors.json
+color_map_json: ../templates/color_map.json
 canvas:
   width: 1024
   height: 1024

@@ -704,28 +704,50 @@ def _resolve_with_base(path: str, base_dir: Path) -> Path:
 
 
 def _load_shared_palette_hexes(raw: dict, base_dir: Path) -> Optional[List[str]]:
-    palette_path = raw.get("shared_color_palette_json")
+    palette_path = raw.get("color_map_json") or raw.get("shared_color_palette_json")
     if not palette_path:
         return None
     resolved = _resolve_with_base(str(palette_path), base_dir)
     if not resolved.exists():
-        raise ValueError(f"shared_color_palette_json does not exist: {resolved}")
+        raise ValueError(f"color_map_json does not exist: {resolved}")
     try:
         payload = json.loads(resolved.read_text(encoding="utf-8"))
     except Exception as exc:
-        raise ValueError(f"Failed to parse shared_color_palette_json: {resolved}") from exc
+        raise ValueError(f"Failed to parse color_map_json: {resolved}") from exc
+
+    # Web palette: { "colors": [ { "hex": "#RRGGBB", ... }, ... ] } (e.g. web_standard_colors.json)
     colors = payload.get("colors")
-    if not isinstance(colors, list) or not colors:
-        raise ValueError("shared_color_palette_json.colors must be a non-empty list.")
-    hexes: List[str] = []
-    for idx, item in enumerate(colors):
-        if not isinstance(item, dict):
-            raise ValueError(f"shared_color_palette_json.colors[{idx}] must be a mapping.")
-        hex_color = item.get("hex")
-        if not isinstance(hex_color, str) or not hex_color.strip():
-            raise ValueError(f"shared_color_palette_json.colors[{idx}].hex is required.")
-        hexes.append(hex_color.strip().upper())
-    return hexes
+    if isinstance(colors, list) and colors:
+        hexes: List[str] = []
+        for idx, item in enumerate(colors):
+            if not isinstance(item, dict):
+                raise ValueError(f"color_map_json.colors[{idx}] must be a mapping.")
+            hex_color = item.get("hex")
+            if not isinstance(hex_color, str) or not hex_color.strip():
+                raise ValueError(f"color_map_json.colors[{idx}].hex is required.")
+            hexes.append(hex_color.strip().upper())
+        return hexes
+
+    # Color map: { "#RRGGBB": { "zh": [...], "en": [...] }, ... } (e.g. templates/color_map.json)
+    if isinstance(payload, dict):
+        hexes_map: List[str] = []
+        for hex_key, names in payload.items():
+            if not isinstance(hex_key, str) or not hex_key.strip().startswith("#"):
+                raise ValueError(
+                    f"color_map_json (color_map format) keys must be #RRGGBB strings, got {hex_key!r}."
+                )
+            if not isinstance(names, dict):
+                raise ValueError(
+                    f"color_map_json[{hex_key!r}] must be an object with zh/en name lists."
+                )
+            hexes_map.append(hex_key.strip().upper())
+        if hexes_map:
+            return hexes_map
+
+    raise ValueError(
+        "color_map_json must be either a web palette with non-empty colors[], "
+        "or a color_map object whose keys are #RRGGBB hex strings."
+    )
 
 
 def resolve_config_path(path: str, base_dir: Path) -> Path:
