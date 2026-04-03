@@ -1,0 +1,62 @@
+{
+  "zh": {
+    "left": [
+      "左对齐",
+      "左端对齐",
+      "水平左对齐",
+      "文本靠左排列",
+      "沿左边界对齐"
+    ],
+    "center": [
+      "居中对齐",
+      "水平居中",
+      "居中排列",
+      "文本居中显示",
+      "沿中线对齐"
+    ],
+    "right": [
+      "右对齐",
+      "右端对齐",
+      "水平右对齐",
+      "文本靠右排列",
+      "沿右边界对齐"
+    ],
+    "vertical": [
+      "竖排",
+      "纵向排版",
+      "垂直方向书写",
+      "自上而下排列",
+      "竖向文本布局"
+    ]
+  },
+  "en": {
+    "left": [
+      "left-aligned",
+      "left alignment",
+      "aligned to the left",
+      "flush left",
+      "left-justified"
+    ],
+    "center": [
+      "center-aligned",
+      "centered horizontally",
+      "center alignment",
+      "horizontally centered",
+      "middle-aligned"
+    ],
+    "right": [
+      "right-aligned",
+      "right alignment",
+      "aligned to the right",
+      "flush right",
+      "right-justified"
+    ],
+    "vertical": [
+      "vertical layout",
+      "vertical text flow",
+      "top-to-bottom arrangement",
+      "vertical writing mode",
+      "columnar vertical alignment"
+    ]
+  }
+}

@@ -105,10 +105,10 @@ class RenderConfig:
     # Caption template file path (e.g. "templates/caption_templates_L1.json").
     # Relative paths are resolved relative to the config YAML directory.
     caption_templates_L1_path: Optional[str] = None
-    # Caption L2 template file path (e.g. "templates/caption_templates_L2.json").
+    # Caption L2: title/body templates with font/color (e.g. caption_templates_L2.json).
     # Relative paths are resolved relative to the config YAML directory.
     caption_templates_L2_path: Optional[str] = None
-    # Caption L3 template file path (e.g. "templates/caption_templates_L3.json").
+    # Caption L3: scene + per-paragraph templates (paragraph_desc; e.g. caption_templates_L3.json).
     # Relative paths are resolved relative to the config YAML directory.
     caption_templates_L3_path: Optional[str] = None
     # Caption L4 template file path (e.g. "templates/caption_templates_L4.json").

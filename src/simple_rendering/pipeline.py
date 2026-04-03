@@ -36,10 +36,11 @@ TITLE_END_PUNCTUATION = set("，。！？；：、,.!?;:)]}）】》」』”’
 WORKER_STATE: Dict = {}
 WORKER_FONT_MANAGER: Optional[FontCoverageManager] = None
 WORKER_CAPTION_TEMPLATES_L1: Optional[Dict[str, List[str]]] = None
-WORKER_CAPTION_TEMPLATES_L2: Optional[Dict[str, List[str]]] = None
+WORKER_CAPTION_TEMPLATES_L2: Optional[Dict[str, Dict[str, List[str]]]] = None
 WORKER_CAPTION_TEMPLATES_L3: Optional[Dict[str, Dict[str, List[str]]]] = None
 WORKER_CAPTION_TEMPLATES_L4: Optional[Dict[str, Dict[str, List[str]]]] = None
 WORKER_LAYOUT_MODE_DESC_L3: Optional[Dict[str, Dict[str, List[str]]]] = None
+WORKER_ALIGNMENT_PHRASES: Optional[Dict[str, Dict[str, List[str]]]] = None
 WORKER_FONT_MAP: Optional[Dict[str, Dict[str, Any]]] = None
 WORKER_COLOR_MAP: Optional[Dict[str, Dict[str, List[str]]]] = None
 
@@ -74,45 +75,11 @@ def _apply_caption_template(template: str, text_all: str) -> str:
     return template.replace("{text_all}", text_all).replace("text_all", text_all)
 
 
-def _load_caption_templates_L2(templates_path: Path) -> Dict[str, List[str]]:
+def _load_caption_templates_title_body(templates_path: Path) -> Dict[str, Dict[str, List[str]]]:
     """
-    Load caption templates L2 JSON file.
+    Load title/body caption templates (used for parquet L2).
 
     Expected format:
-      {
-        "zh": ["...{text_color}...{text_paragraph}...", ...],
-        "en": ["...{text_color}...{text_paragraph}...", ...]
-      }
-    """
-    try:
-        with templates_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"caption L2 templates file not found: {templates_path}") from e
-    if not isinstance(data, dict):
-        raise ValueError(f"caption L2 templates must be a JSON object: {templates_path}")
-    out: Dict[str, List[str]] = {}
-    for lang in ("zh", "en"):
-        lang_list = data.get(lang)
-        if not isinstance(lang_list, list) or not all(isinstance(x, str) for x in lang_list):
-            raise ValueError(f"caption L2 templates[{lang}] must be a list of strings: {templates_path}")
-        out[lang] = lang_list
-    return out
-
-
-def _apply_caption_template_L2(template: str, text_color: str, text_paragraph: str) -> str:
-    # Color should not be wrapped by quotes in final captions, even if templates add them.
-    t = template
-    ph = "{text_color}"
-    t = t.replace(f"“{ph}”", ph).replace(f"\"{ph}\"", ph).replace(f"'{ph}'", ph).replace(f"‘{ph}’", ph)
-    return t.replace("{text_color}", text_color).replace("{text_paragraph}", text_paragraph)
-
-
-def _load_caption_templates_L3(templates_path: Path) -> Dict[str, Dict[str, List[str]]]:
-    """
-    Load caption templates L3 JSON file.
-
-    Expected format (role_nested):
       {
         "zh": {"title": [...], "body": [...]},
         "en": {"title": [...], "body": [...]}
@@ -122,25 +89,29 @@ def _load_caption_templates_L3(templates_path: Path) -> Dict[str, Dict[str, List
         with templates_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"caption L3 templates file not found: {templates_path}") from e
+        raise FileNotFoundError(f"caption title/body templates file not found: {templates_path}") from e
     if not isinstance(data, dict):
-        raise ValueError(f"caption L3 templates must be a JSON object: {templates_path}")
+        raise ValueError(f"caption title/body templates must be a JSON object: {templates_path}")
     out: Dict[str, Dict[str, List[str]]] = {}
     for lang in ("zh", "en"):
         lang_obj = data.get(lang)
         if not isinstance(lang_obj, dict):
-            raise ValueError(f"caption L3 templates[{lang}] must be an object with title/body lists: {templates_path}")
+            raise ValueError(
+                f"caption title/body templates[{lang}] must be an object with title/body lists: {templates_path}"
+            )
         for role in ("title", "body"):
             role_list = lang_obj.get(role)
             if not isinstance(role_list, list) or not all(isinstance(x, str) for x in role_list):
                 raise ValueError(
-                    f"caption L3 templates[{lang}][{role}] must be a list of strings: {templates_path}"
+                    f"caption title/body templates[{lang}][{role}] must be a list of strings: {templates_path}"
                 )
         out[lang] = {"title": lang_obj["title"], "body": lang_obj["body"]}
     return out
 
 
-def _apply_caption_template_L3(template: str, font_name: str, text_color: str, text_paragraph: str) -> str:
+def _apply_caption_template_title_body(
+    template: str, font_name: str, text_color: str, text_paragraph: str
+) -> str:
     # Font/color should not be wrapped by quotes in final captions, even if templates add them.
     t = template
     for ph in ("{font_name}", "{text_color}"):
@@ -155,6 +126,36 @@ def _apply_caption_template_L3(template: str, font_name: str, text_color: str, t
     )
 
 
+def _load_caption_templates_L3_scene(templates_path: Path) -> Dict[str, Dict[str, List[str]]]:
+    """Scene + per-paragraph descriptions (L3); same shape as L4 but uses paragraph_desc instead of line_desc."""
+    try:
+        with templates_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"caption L3 scene templates file not found: {templates_path}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"caption L3 scene templates must be a JSON object: {templates_path}")
+    required_keys = [
+        "scene_bg",
+        "scene_overall_align",
+        "title_intro",
+        "paragraph_desc",
+        "effect_bold",
+        "effect_shadow",
+    ]
+    out: Dict[str, Dict[str, List[str]]] = {}
+    for lang in ("zh", "en"):
+        obj = data.get(lang)
+        if not isinstance(obj, dict):
+            raise ValueError(f"caption L3 scene templates[{lang}] must be an object: {templates_path}")
+        for k in required_keys:
+            v = obj.get(k)
+            if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+                raise ValueError(f"caption L3 scene templates[{lang}][{k}] must be list[str]: {templates_path}")
+        out[lang] = {k: obj[k] for k in required_keys}
+    return out
+
+
 def _load_caption_templates_L4(templates_path: Path) -> Dict[str, Dict[str, List[str]]]:
     try:
         with templates_path.open("r", encoding="utf-8") as f:
@@ -167,7 +168,7 @@ def _load_caption_templates_L4(templates_path: Path) -> Dict[str, Dict[str, List
         "scene_bg",
         "scene_overall_align",
         "title_intro",
-        "body_intro",
+        "body_segment_intro",
         "line_desc",
         "effect_bold",
         "effect_shadow",
@@ -333,7 +334,9 @@ def _group_content_by_paragraph(content_list: Sequence[Dict[str, object]]) -> Li
         current["texts"].append(text)
     out: List[Dict[str, str]] = []
     for g in grouped:
-        paragraph_text = "".join(str(t) for t in g["texts"] if str(t))
+        lines = [str(t) for t in g["texts"] if str(t)]
+        # Keep explicit line-break markers in captions (literal "\n"), without trailing marker.
+        paragraph_text = "\\n".join(lines)
         if not paragraph_text:
             continue
         out.append(
@@ -400,6 +403,48 @@ def _layout_variant_to_alignment(layout_mode: str, layout_variant: str) -> Tuple
     return (h, justify)
 
 
+def _load_alignment_phrases(path: Path) -> Dict[str, Dict[str, List[str]]]:
+    """
+    Load zh/en lists of natural-language phrases per alignment key (left/center/right/vertical).
+    Used for L3/L4 captions instead of raw meta strings like \"center\".
+    """
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"alignment phrases file not found: {path}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"alignment phrases must be a JSON object: {path}")
+    out: Dict[str, Dict[str, List[str]]] = {}
+    for lang in ("zh", "en"):
+        obj = data.get(lang)
+        if not isinstance(obj, dict):
+            raise ValueError(f"alignment phrases[{lang}] must be an object: {path}")
+        inner: Dict[str, List[str]] = {}
+        for key in ("left", "center", "right", "vertical"):
+            lst = obj.get(key)
+            if isinstance(lst, list) and lst and all(isinstance(x, str) for x in lst):
+                inner[key] = list(lst)
+            else:
+                inner[key] = [key]
+        out[lang] = inner
+    return out
+
+
+def _caption_placeholder_text(text: str) -> str:
+    """Raw text for {title_text} / {paragraph_text} / {line_text}. Quotation marks belong in the template only."""
+    return str(text)
+
+
+def _pick_alignment_caption_phrase(align_key: str, lang: str, rng: random.Random) -> str:
+    if WORKER_ALIGNMENT_PHRASES is None:
+        return align_key
+    phrases = WORKER_ALIGNMENT_PHRASES.get(lang, {}).get(align_key)
+    if not phrases:
+        return align_key
+    return rng.choice(phrases)
+
+
 def _build_caption_L3(
     content_list: Sequence[Dict[str, object]],
     layout_mode: str,
@@ -409,8 +454,11 @@ def _build_caption_L3(
     templates: Dict[str, Dict[str, List[str]]],
     rng: random.Random,
 ) -> Tuple[str, str]:
+    """Scene + layout + per-paragraph body text (paragraph_desc); L4 uses line_desc per line."""
     blocks = _group_content_blocks_with_lines(content_list)
     overall_align, overall_justify = _layout_variant_to_alignment(layout_mode, layout_variant)
+    align_zh = _pick_alignment_caption_phrase(overall_align, "zh", rng)
+    align_en = _pick_alignment_caption_phrase(overall_align, "en", rng)
 
     def _pick(lang: str, key: str) -> str:
         return rng.choice(templates[lang][key])
@@ -427,12 +475,12 @@ def _build_caption_L3(
     overall_justify_clause_en = ", fully justified" if overall_justify else ""
     out_zh.append(
         _pick("zh", "scene_overall_align")
-        .replace("{overall_align}", overall_align)
+        .replace("{overall_align}", align_zh)
         .replace("{overall_justify_clause}", overall_justify_clause_zh)
     )
     out_en.append(
         _pick("en", "scene_overall_align")
-        .replace("{overall_align}", overall_align)
+        .replace("{overall_align}", align_en)
         .replace("{overall_justify_clause}", overall_justify_clause_en)
     )
     if WORKER_LAYOUT_MODE_DESC_L3 is not None:
@@ -440,24 +488,23 @@ def _build_caption_L3(
         out_zh.append(rng.choice(WORKER_LAYOUT_MODE_DESC_L3["zh"][mode_key]))
         out_en.append(rng.choice(WORKER_LAYOUT_MODE_DESC_L3["en"][mode_key]))
 
+    body_para_no = 0
     for b in blocks:
         role = str(b.get("role", "body"))
-        para_align, para_justify = _layout_variant_to_alignment(layout_mode, layout_variant)
         lines = b.get("lines", [])
         text_paragraph = ""
         if isinstance(lines, list):
-            text_paragraph = "".join(str(x) for x in lines if str(x))
-        text_quoted = f"\"{text_paragraph}\"" if text_paragraph else "\"\""
+            line_texts = [str(x) for x in lines if str(x)]
+            text_paragraph = "\\n".join(line_texts)
+        title_t = _caption_placeholder_text(text_paragraph)
         if role == "title":
             out_zh.append(
                 _pick("zh", "title_intro")
-                .replace("{title_text}", text_quoted)
-                .replace("{paragraph_align}", para_align)
+                .replace("{title_text}", title_t)
             )
             out_en.append(
                 _pick("en", "title_intro")
-                .replace("{title_text}", text_quoted)
-                .replace("{paragraph_align}", para_align)
+                .replace("{title_text}", title_t)
             )
             if bool(b.get("is_bold", False)):
                 out_zh.append(_pick("zh", "effect_bold"))
@@ -467,36 +514,123 @@ def _build_caption_L3(
                 out_en.append(_pick("en", "effect_shadow"))
             continue
 
-        justify_zh = f"，两端对齐：{'是' if para_justify else '否'}" if para_justify else ""
-        justify_en = f", justify: {'yes' if para_justify else 'no'}" if para_justify else ""
-        effect_zh_parts: List[str] = []
-        effect_en_parts: List[str] = []
         if bool(b.get("is_bold", False)):
-            effect_zh_parts.append(_pick("zh", "effect_bold"))
-            effect_en_parts.append(_pick("en", "effect_bold"))
+            out_zh.append(_pick("zh", "effect_bold"))
+            out_en.append(_pick("en", "effect_bold"))
         if bool(b.get("has_shadow", False)):
-            effect_zh_parts.append(_pick("zh", "effect_shadow"))
-            effect_en_parts.append(_pick("en", "effect_shadow"))
-        out_zh.append(
-            _pick("zh", "body_intro")
-            .replace("{paragraph_align}", para_align)
-            .replace("{paragraph_justify_clause}", justify_zh)
-            .replace("{effects_desc}", "".join(effect_zh_parts))
-        )
-        out_en.append(
-            _pick("en", "body_intro")
-            .replace("{paragraph_align}", para_align)
-            .replace("{paragraph_justify_clause}", justify_en)
-            .replace("{effects_desc}", "".join(effect_en_parts))
-        )
+            out_zh.append(_pick("zh", "effect_shadow"))
+            out_en.append(_pick("en", "effect_shadow"))
         if isinstance(lines, list):
-            for i, line in enumerate(lines, start=1):
-                txt = str(line)
-                if not txt:
-                    continue
-                quoted = f"\"{txt}\""
-                out_zh.append(_pick("zh", "line_desc").replace("{line_no}", str(i)).replace("{line_text}", quoted))
-                out_en.append(_pick("en", "line_desc").replace("{line_no}", str(i)).replace("{line_text}", quoted))
+            joined = "\\n".join(str(x) for x in lines if str(x))
+            if joined.strip():
+                body_para_no += 1
+                para_t = _caption_placeholder_text(joined)
+                out_zh.append(
+                    _pick("zh", "paragraph_desc")
+                    .replace("{paragraph_no}", str(body_para_no))
+                    .replace("{paragraph_text}", para_t)
+                )
+                out_en.append(
+                    _pick("en", "paragraph_desc")
+                    .replace("{paragraph_no}", str(body_para_no))
+                    .replace("{paragraph_text}", para_t)
+                )
+
+    return "\n".join(out_zh), "\n".join(out_en)
+
+
+def _build_caption_L4(
+    content_list: Sequence[Dict[str, object]],
+    layout_mode: str,
+    layout_variant: str,
+    background_color: str,
+    has_background_image: bool,
+    templates: Dict[str, Dict[str, List[str]]],
+    rng: random.Random,
+) -> Tuple[str, str]:
+    """Scene + layout + per-body-segment intro + per-line body text (line_desc)."""
+    blocks = _group_content_blocks_with_lines(content_list)
+    overall_align, overall_justify = _layout_variant_to_alignment(layout_mode, layout_variant)
+    align_zh = _pick_alignment_caption_phrase(overall_align, "zh", rng)
+    align_en = _pick_alignment_caption_phrase(overall_align, "en", rng)
+
+    def _pick(lang: str, key: str) -> str:
+        return rng.choice(templates[lang][key])
+
+    out_zh: List[str] = []
+    out_en: List[str] = []
+    if not has_background_image:
+        bg_color_zh, bg_color_en = _pick_color_caption_labels(
+            background_color, rng=rng, color_map=WORKER_COLOR_MAP
+        )
+        out_zh.append(_pick("zh", "scene_bg").replace("{text_bg_color}", bg_color_zh))
+        out_en.append(_pick("en", "scene_bg").replace("{text_bg_color}", bg_color_en))
+    overall_justify_clause_zh = "，整体两端对齐" if overall_justify else ""
+    overall_justify_clause_en = ", fully justified" if overall_justify else ""
+    out_zh.append(
+        _pick("zh", "scene_overall_align")
+        .replace("{overall_align}", align_zh)
+        .replace("{overall_justify_clause}", overall_justify_clause_zh)
+    )
+    out_en.append(
+        _pick("en", "scene_overall_align")
+        .replace("{overall_align}", align_en)
+        .replace("{overall_justify_clause}", overall_justify_clause_en)
+    )
+    if WORKER_LAYOUT_MODE_DESC_L3 is not None:
+        mode_key = "title_body" if layout_mode == "title_body" else "full_text"
+        out_zh.append(rng.choice(WORKER_LAYOUT_MODE_DESC_L3["zh"][mode_key]))
+        out_en.append(rng.choice(WORKER_LAYOUT_MODE_DESC_L3["en"][mode_key]))
+
+    body_para_no = 0
+    for b in blocks:
+        role = str(b.get("role", "body"))
+        lines = b.get("lines", [])
+        text_paragraph = ""
+        if isinstance(lines, list):
+            text_paragraph = "".join(str(x) for x in lines if str(x))
+        title_t = _caption_placeholder_text(text_paragraph)
+        if role == "title":
+            out_zh.append(
+                _pick("zh", "title_intro")
+                .replace("{title_text}", title_t)
+            )
+            out_en.append(
+                _pick("en", "title_intro")
+                .replace("{title_text}", title_t)
+            )
+            if bool(b.get("is_bold", False)):
+                out_zh.append(_pick("zh", "effect_bold"))
+                out_en.append(_pick("en", "effect_bold"))
+            if bool(b.get("has_shadow", False)):
+                out_zh.append(_pick("zh", "effect_shadow"))
+                out_en.append(_pick("en", "effect_shadow"))
+            continue
+
+        line_list = lines if isinstance(lines, list) else []
+        has_line_content = any(str(x).strip() for x in line_list)
+        has_effect = bool(b.get("is_bold", False)) or bool(b.get("has_shadow", False))
+        if not has_line_content and not has_effect:
+            continue
+
+        body_para_no += 1
+        seg_no = str(body_para_no)
+        out_zh.append(_pick("zh", "body_segment_intro").replace("{paragraph_no}", seg_no))
+        out_en.append(_pick("en", "body_segment_intro").replace("{paragraph_no}", seg_no))
+
+        if bool(b.get("is_bold", False)):
+            out_zh.append(_pick("zh", "effect_bold"))
+            out_en.append(_pick("en", "effect_bold"))
+        if bool(b.get("has_shadow", False)):
+            out_zh.append(_pick("zh", "effect_shadow"))
+            out_en.append(_pick("en", "effect_shadow"))
+        for i, line in enumerate(line_list, start=1):
+            txt = str(line)
+            if not txt:
+                continue
+            line_t = _caption_placeholder_text(txt)
+            out_zh.append(_pick("zh", "line_desc").replace("{line_no}", str(i)).replace("{line_text}", line_t))
+            out_en.append(_pick("en", "line_desc").replace("{line_no}", str(i)).replace("{line_text}", line_t))
 
     return "\n".join(out_zh), "\n".join(out_en)
 
@@ -620,14 +754,14 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
     if not templates_path_L2.is_absolute():
         templates_path_L2 = config_dir / templates_path_L2
     templates_path_L2 = templates_path_L2.resolve()
-    caption_templates_L2 = _load_caption_templates_L2(templates_path_L2)
+    caption_templates_L2 = _load_caption_templates_title_body(templates_path_L2)
     if not getattr(config, "caption_templates_L3_path", None):
         raise RuntimeError("caption_templates_L3_path is required in config YAML root for parquet caption L3 fields.")
     templates_path_L3 = Path(config.caption_templates_L3_path).expanduser()
     if not templates_path_L3.is_absolute():
         templates_path_L3 = config_dir / templates_path_L3
     templates_path_L3 = templates_path_L3.resolve()
-    caption_templates_L3 = _load_caption_templates_L3(templates_path_L3)
+    caption_templates_L3 = _load_caption_templates_L3_scene(templates_path_L3)
     templates_path_L4: Path
     if getattr(config, "caption_templates_L4_path", None):
         templates_path_L4 = Path(str(config.caption_templates_L4_path)).expanduser()
@@ -639,6 +773,8 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
     caption_templates_L4 = _load_caption_templates_L4(templates_path_L4)
     layout_mode_desc_L3_path = config_dir.parent / "templates" / "layout_mode_desc_L3.json"
     layout_mode_desc_L3 = _load_layout_mode_desc_L3(layout_mode_desc_L3_path.resolve())
+    alignment_phrases_path = config_dir.parent / "templates" / "alignment_phrases.json"
+    alignment_phrases = _load_alignment_phrases(alignment_phrases_path.resolve())
     font_map_path = config_dir.parent / "templates" / "font_map.json"
     font_map = _load_font_map(font_map_path.resolve())
     color_map_path = config_dir.parent / "templates" / "color_map.json"
@@ -667,6 +803,7 @@ def run_generation(config_path: str, font_category_override: Optional[str] = Non
         "caption_templates_L3": caption_templates_L3,
         "caption_templates_L4": caption_templates_L4,
         "layout_mode_desc_L3": layout_mode_desc_L3,
+        "alignment_phrases": alignment_phrases,
         "font_map": font_map,
         "color_map": color_map,
     }
@@ -721,7 +858,7 @@ def _generate_round_parallel(
 
 
 def _init_worker(state: Dict) -> None:
-    global WORKER_STATE, WORKER_FONT_MANAGER, WORKER_CAPTION_TEMPLATES_L1, WORKER_CAPTION_TEMPLATES_L2, WORKER_CAPTION_TEMPLATES_L3, WORKER_CAPTION_TEMPLATES_L4, WORKER_LAYOUT_MODE_DESC_L3, WORKER_FONT_MAP, WORKER_COLOR_MAP
+    global WORKER_STATE, WORKER_FONT_MANAGER, WORKER_CAPTION_TEMPLATES_L1, WORKER_CAPTION_TEMPLATES_L2, WORKER_CAPTION_TEMPLATES_L3, WORKER_CAPTION_TEMPLATES_L4, WORKER_LAYOUT_MODE_DESC_L3, WORKER_ALIGNMENT_PHRASES, WORKER_FONT_MAP, WORKER_COLOR_MAP
     WORKER_STATE = state
     WORKER_FONT_MANAGER = FontCoverageManager()
     WORKER_CAPTION_TEMPLATES_L1 = WORKER_STATE.get("caption_templates_L1")
@@ -729,6 +866,7 @@ def _init_worker(state: Dict) -> None:
     WORKER_CAPTION_TEMPLATES_L3 = WORKER_STATE.get("caption_templates_L3")
     WORKER_CAPTION_TEMPLATES_L4 = WORKER_STATE.get("caption_templates_L4")
     WORKER_LAYOUT_MODE_DESC_L3 = WORKER_STATE.get("layout_mode_desc_L3")
+    WORKER_ALIGNMENT_PHRASES = WORKER_STATE.get("alignment_phrases")
     WORKER_FONT_MAP = WORKER_STATE.get("font_map")
     WORKER_COLOR_MAP = WORKER_STATE.get("color_map")
 
@@ -1007,14 +1145,14 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
             caption_template_en = rng.choice(WORKER_CAPTION_TEMPLATES_L1["en"])
             if WORKER_CAPTION_TEMPLATES_L2 is None:
                 raise RuntimeError("Worker caption templates not initialized (caption_templates_L2 missing).")
-            caption_template_zh_L2 = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"])
-            caption_template_en_L2 = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"])
             if WORKER_CAPTION_TEMPLATES_L3 is None:
                 raise RuntimeError("Worker caption templates not initialized (caption_templates_L3 missing).")
-            caption_template_zh_title = rng.choice(WORKER_CAPTION_TEMPLATES_L3["zh"]["title"])
-            caption_template_zh_body = rng.choice(WORKER_CAPTION_TEMPLATES_L3["zh"]["body"])
-            caption_template_en_title = rng.choice(WORKER_CAPTION_TEMPLATES_L3["en"]["title"])
-            caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L3["en"]["body"])
+            if WORKER_CAPTION_TEMPLATES_L4 is None:
+                raise RuntimeError("Worker caption templates not initialized (caption_templates_L4 missing).")
+            caption_template_zh_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["title"])
+            caption_template_zh_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["body"])
+            caption_template_en_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["title"])
+            caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["body"])
             row = _build_parquet_row(
                 image_id=image_id,
                 relative_img_path=relative_img_path,
@@ -1027,8 +1165,6 @@ def _generate_single_sample(round_idx: int, sample_idx: int, seed: int) -> Dict:
                 template_name=template_name,
                 caption_template_zh=caption_template_zh,
                 caption_template_en=caption_template_en,
-                caption_template_zh_L2=caption_template_zh_L2,
-                caption_template_en_L2=caption_template_en_L2,
                 caption_template_zh_title=caption_template_zh_title,
                 caption_template_zh_body=caption_template_zh_body,
                 caption_template_en_title=caption_template_en_title,
@@ -1409,14 +1545,14 @@ def _generate_single_sample_fallback(
             caption_template_en = rng.choice(WORKER_CAPTION_TEMPLATES_L1["en"])
             if WORKER_CAPTION_TEMPLATES_L2 is None:
                 raise RuntimeError("Worker caption templates not initialized (caption_templates_L2 missing).")
-            caption_template_zh_L2 = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"])
-            caption_template_en_L2 = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"])
             if WORKER_CAPTION_TEMPLATES_L3 is None:
                 raise RuntimeError("Worker caption templates not initialized (caption_templates_L3 missing).")
-            caption_template_zh_title = rng.choice(WORKER_CAPTION_TEMPLATES_L3["zh"]["title"])
-            caption_template_zh_body = rng.choice(WORKER_CAPTION_TEMPLATES_L3["zh"]["body"])
-            caption_template_en_title = rng.choice(WORKER_CAPTION_TEMPLATES_L3["en"]["title"])
-            caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L3["en"]["body"])
+            if WORKER_CAPTION_TEMPLATES_L4 is None:
+                raise RuntimeError("Worker caption templates not initialized (caption_templates_L4 missing).")
+            caption_template_zh_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["title"])
+            caption_template_zh_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["zh"]["body"])
+            caption_template_en_title = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["title"])
+            caption_template_en_body = rng.choice(WORKER_CAPTION_TEMPLATES_L2["en"]["body"])
             row = _build_parquet_row(
                 image_id=image_id,
                 relative_img_path=relative_img_path,
@@ -1429,8 +1565,6 @@ def _generate_single_sample_fallback(
                 template_name=None,
                 caption_template_zh=caption_template_zh,
                 caption_template_en=caption_template_en,
-                caption_template_zh_L2=caption_template_zh_L2,
-                caption_template_en_L2=caption_template_en_L2,
                 caption_template_zh_title=caption_template_zh_title,
                 caption_template_zh_body=caption_template_zh_body,
                 caption_template_en_title=caption_template_en_title,
@@ -1496,8 +1630,6 @@ def _build_parquet_row(
     template_name: Optional[str],
     caption_template_zh: str,
     caption_template_en: str,
-    caption_template_zh_L2: str,
-    caption_template_en_L2: str,
     caption_template_zh_title: str,
     caption_template_zh_body: str,
     caption_template_en_title: str,
@@ -1522,36 +1654,11 @@ def _build_parquet_row(
         template_name=template_name,
     )
     paragraph_rows = _group_content_by_paragraph(content_list)
-    text_all = "\n".join(row["text_paragraph"] for row in paragraph_rows)
+    text_all = "\\n".join(row["text_paragraph"] for row in paragraph_rows)
     caption_zh_L1 = _apply_caption_template(caption_template_zh, text_all)
     caption_en_L1 = _apply_caption_template(caption_template_en, text_all)
     caption_lines_zh_L2: List[str] = []
     caption_lines_en_L2: List[str] = []
-    for row in paragraph_rows:
-        text_paragraph = row["text_paragraph"]
-        raw_text_color = row["text_color"]
-        text_color_zh, text_color_en = _pick_color_caption_labels(
-            raw_text_color, rng=rng, color_map=WORKER_COLOR_MAP
-        )
-        caption_lines_zh_L2.append(
-            _apply_caption_template_L2(
-                caption_template_zh_L2,
-                text_color=text_color_zh,
-                text_paragraph=text_paragraph,
-            )
-        )
-        caption_lines_en_L2.append(
-            _apply_caption_template_L2(
-                caption_template_en_L2,
-                text_color=text_color_en,
-                text_paragraph=text_paragraph,
-            )
-        )
-    caption_zh_L2 = "\n".join(caption_lines_zh_L2)
-    caption_en_L2 = "\n".join(caption_lines_en_L2)
-
-    caption_lines_zh_L3: List[str] = []
-    caption_lines_en_L3: List[str] = []
     for row in paragraph_rows:
         text_paragraph = row["text_paragraph"]
         role = row["role"]
@@ -1564,23 +1671,33 @@ def _build_parquet_row(
         is_title = role == "title"
         tpl_zh = caption_template_zh_title if is_title else caption_template_zh_body
         tpl_en = caption_template_en_title if is_title else caption_template_en_body
-        caption_lines_zh_L3.append(
-            _apply_caption_template_L3(
+        caption_lines_zh_L2.append(
+            _apply_caption_template_title_body(
                 tpl_zh, font_name=font_name_zh, text_color=text_color_zh, text_paragraph=text_paragraph
             )
         )
-        caption_lines_en_L3.append(
-            _apply_caption_template_L3(
+        caption_lines_en_L2.append(
+            _apply_caption_template_title_body(
                 tpl_en, font_name=font_name_en, text_color=text_color_en, text_paragraph=text_paragraph
             )
         )
-    # Legacy L2 moved to L3.
-    caption_zh_L3 = "\n".join(caption_lines_zh_L3)
-    caption_en_L3 = "\n".join(caption_lines_en_L3)
+    caption_zh_L2 = "\n".join(caption_lines_zh_L2)
+    caption_en_L2 = "\n".join(caption_lines_en_L2)
+
+    if WORKER_CAPTION_TEMPLATES_L3 is None:
+        raise RuntimeError("Worker caption templates not initialized (caption_templates_L3 missing).")
+    caption_zh_L3, caption_en_L3 = _build_caption_L3(
+        content_list=content_list,
+        layout_mode=layout_mode,
+        layout_variant=layout_result.layout_variant,
+        background_color=background,
+        has_background_image=has_background_image,
+        templates=WORKER_CAPTION_TEMPLATES_L3,
+        rng=rng,
+    )
     if WORKER_CAPTION_TEMPLATES_L4 is None:
         raise RuntimeError("Worker caption templates not initialized (caption_templates_L4 missing).")
-    # Legacy L3 moved to L4.
-    caption_zh_L4, caption_en_L4 = _build_caption_L3(
+    caption_zh_L4, caption_en_L4 = _build_caption_L4(
         content_list=content_list,
         layout_mode=layout_mode,
         layout_variant=layout_result.layout_variant,

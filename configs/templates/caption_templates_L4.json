@@ -1,20 +1,174 @@
 {
   "zh": {
-    "scene_bg": ["画面背景颜色为{text_bg_color}。"],
-    "scene_overall_align": ["整体对齐方式为{overall_align}{overall_justify_clause}。"],
-    "title_intro": ["标题内容为{title_text}，对齐方式为{paragraph_align}。"],
-    "body_intro": ["正文对齐方式为{paragraph_align}{paragraph_justify_clause}。{effects_desc}"],
-    "line_desc": ["第{line_no}行：{line_text}。"],
-    "effect_bold": ["该段使用了加粗效果。"],
-    "effect_shadow": ["该段使用了阴影特效。"]
+    "scene_bg": [
+      "画面背景颜色为{text_bg_color}。",
+      "背景底色采用了{text_bg_color}。",
+      "整个场景设定在{text_bg_color}的底色之上。",
+      "背景色呈现为{text_bg_color}。",
+      "以{text_bg_color}作为背景基调。",
+      "背景部分被填充为{text_bg_color}。",
+      "画布的背景色调为{text_bg_color}。",
+      "视觉背景选用{text_bg_color}。",
+      "背景色彩配置：{text_bg_color}。",
+      "图像以{text_bg_color}作为衬底。"
+    ],
+    "scene_overall_align": [
+      "整体对齐方式为{overall_align}{overall_justify_clause}。",
+      "画面布局遵循{overall_align}{overall_justify_clause}的对齐准则。",
+      "全图采用{overall_align}{overall_justify_clause}进行排版对齐。",
+      "布局逻辑设定为{overall_align}{overall_justify_clause}。",
+      "内容整体呈{overall_align}{overall_justify_clause}分布。",
+      "所有元素在全局范围内按{overall_align}{overall_justify_clause}排列。",
+      "构图对齐风格：{overall_align}{overall_justify_clause}。",
+      "整幅作品的对齐模式是{overall_align}{overall_justify_clause}。",
+      "文本与元素的全局对齐为{overall_align}{overall_justify_clause}。",
+      "采用{overall_align}{overall_justify_clause}的布局方式来统一画面。"
+    ],
+    "title_intro": [
+      "标题内容为“{title_text}”。",
+      "主标题文字显示为“{title_text}”。",
+      "顶部的标题文本是“{title_text}”。",
+      "标题栏标注着：“{title_text}”。",
+      "头部标题被设定为“{title_text}”。",
+      "标题部分呈现的内容是“{title_text}”。",
+      "画面上方书写着标题“{title_text}”。",
+      "此处标题展示为“{title_text}”。",
+      "主标信息：“{title_text}”。",
+      "标题文案设定为“{title_text}”。"
+    ],
+    "body_segment_intro": [
+      "第{paragraph_no}段中，",
+      "接下来是第{paragraph_no}段。",
+      "进入第{paragraph_no}段：",
+      "下面开始第{paragraph_no}段。",
+      "第{paragraph_no}段内容如下：",
+      "切换到第{paragraph_no}段。",
+      "此处为第{paragraph_no}段。",
+      "从第{paragraph_no}段起：",
+      "叙述第{paragraph_no}段：",
+      "定位到第{paragraph_no}段："
+    ],
+    "line_desc": [
+      "第{line_no}行：“{line_text}”。",
+      "位于第{line_no}行的文本内容是“{line_text}”。",
+      "第{line_no}行显示为：“{line_text}”。",
+      "在第{line_no}行书写了“{line_text}”。",
+      "文字序列中的第{line_no}行为“{line_text}”。",
+      "第{line_no}行文本描述：“{line_text}”。",
+      "定位到第{line_no}行，内容是“{line_text}”。",
+      "次序为第{line_no}行的字样是“{line_text}”。",
+      "第{line_no}排的文字信息为“{line_text}”。",
+      "该位置（第{line_no}行）的文字是“{line_text}”。"
+    ],
+    "effect_bold": [
+      "该段使用了加粗效果。",
+      "此段文字进行了粗体化处理。",
+      "本段文本采用了加重显示（Bold）。",
+      "文字以加粗样式呈现，视觉上更加突出。",
+      "该部分应用了粗体字形。",
+      "段落字形被加粗渲染。",
+      "此处文字呈现为醒目的粗体。",
+      "使用了加粗笔触来书写这一段。",
+      "该文本块启用了加粗字重。",
+      "段落字体风格设定为加粗。"
+    ],
+    "effect_shadow": [
+      "该段使用了阴影特效。",
+      "此部分文字带有明显的投影效果。",
+      "文本背后添加了阴影装饰。",
+      "该段文字具有视觉阴影效果。",
+      "应用了阴影（Shadow）样式进行渲染。",
+      "文字下方衬有淡淡的阴影。",
+      "该段文本启用了立体阴影效果。",
+      "为文字增加了层次感阴影。",
+      "此段内容使用了阴影滤镜。",
+      "文本带有艺术化的投影样式。"
+    ]
   },
   "en": {
-    "scene_bg": ["The background color is {text_bg_color}."],
-    "scene_overall_align": ["Overall alignment is {overall_align}{overall_justify_clause}."],
-    "title_intro": ["Title content is {title_text}, alignment is {paragraph_align}."],
-    "body_intro": ["Body alignment is {paragraph_align}{paragraph_justify_clause}. {effects_desc}"],
-    "line_desc": ["Line {line_no}: {line_text}."],
-    "effect_bold": ["This paragraph uses bold styling."],
-    "effect_shadow": ["This paragraph uses shadow effects."]
+    "scene_bg": [
+      "The background color is {text_bg_color}.",
+      "The backdrop is set to a solid {text_bg_color}.",
+      "A {text_bg_color} hue is used for the background layer.",
+      "The scene is rendered against a {text_bg_color} background.",
+      "Background color property: {text_bg_color}.",
+      "The background features a consistent {text_bg_color} tone.",
+      "The base color of the scene is {text_bg_color}.",
+      "The image utilizes {text_bg_color} for its background.",
+      "The rear plane is colored in {text_bg_color}.",
+      "The canvas background is displayed in {text_bg_color}."
+    ],
+    "scene_overall_align": [
+      "Overall alignment is {overall_align}{overall_justify_clause}.",
+      "The entire layout follows {overall_align}{overall_justify_clause} alignment.",
+      "Global alignment settings: {overall_align}{overall_justify_clause}.",
+      "The elements are aligned {overall_align}{overall_justify_clause} as a whole.",
+      "A layout style of {overall_align}{overall_justify_clause} is applied overall.",
+      "Everything is positioned according to {overall_align}{overall_justify_clause}.",
+      "The compositional alignment is set to {overall_align}{overall_justify_clause}.",
+      "The alignment for the total frame is {overall_align}{overall_justify_clause}.",
+      "Structured with an overall {overall_align}{overall_justify_clause} alignment.",
+      "Displaying a global {overall_align}{overall_justify_clause} alignment pattern."
+    ],
+    "title_intro": [
+      "Title content is \"{title_text}\".",
+      "The heading text reads \"{title_text}\".",
+      "The main title is set to \"{title_text}\".",
+      "Displaying the title: \"{title_text}\".",
+      "The header says \"{title_text}\".",
+      "Title information: \"{title_text}\".",
+      "A title labeled \"{title_text}\" is shown.",
+      "The title string is defined as \"{title_text}\".",
+      "A prominent title \"{title_text}\" is featured.",
+      "The text for the title part is \"{title_text}\"."
+    ],
+    "body_segment_intro": [
+      "In paragraph {paragraph_no}, ",
+      "Next is paragraph {paragraph_no}: ",
+      "Moving to paragraph {paragraph_no}: ",
+      "Beginning paragraph {paragraph_no}: ",
+      "For paragraph {paragraph_no}: ",
+      "Here is paragraph {paragraph_no}: ",
+      "Paragraph {paragraph_no} follows: ",
+      "Turning to paragraph {paragraph_no}: ",
+      "At paragraph {paragraph_no}: ",
+      "The text of paragraph {paragraph_no}: "
+    ],
+    "line_desc": [
+      "Line {line_no}: \"{line_text}\".",
+      "The text on line {line_no} is \"{line_text}\".",
+      "Line {line_no} displays the content \"{line_text}\".",
+      "On line {line_no}, it reads: \"{line_text}\".",
+      "The content for row {line_no} is \"{line_text}\".",
+      "Line {line_no} text description: \"{line_text}\".",
+      "Located at line {line_no} is the text \"{line_text}\".",
+      "The characters in line {line_no} are \"{line_text}\".",
+      "For the {line_no} line, the text is \"{line_text}\".",
+      "The content of the {line_no} row segment is \"{line_text}\"."
+    ],
+    "effect_bold": [
+      "This paragraph uses bold styling.",
+      "The text in this section is bolded.",
+      "A bold font-weight is applied to this paragraph.",
+      "This part features bold typeface rendering.",
+      "The paragraph is highlighted with a bold effect.",
+      "Bold styling has been enabled for this text block.",
+      "This content is written in a bold style.",
+      "Bold characters are used for this paragraph.",
+      "The paragraph stands out with a bold font weight.",
+      "A bold effect is applied to the text here."
+    ],
+    "effect_shadow": [
+      "This paragraph uses shadow effects.",
+      "A drop shadow is applied to this text section.",
+      "The text features a subtle shadow effect.",
+      "This paragraph is rendered with a shadow style.",
+      "Shadowing is utilized for the text here.",
+      "The characters in this part have shadow styling.",
+      "This content is accented with a shadow effect.",
+      "The paragraph is displayed with text shadows.",
+      "A shadow filter is applied to this paragraph.",
+      "The text block includes a visual shadow effect."
+    ]
   }
 }

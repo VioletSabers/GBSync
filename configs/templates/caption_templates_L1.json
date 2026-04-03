@@ -2,11 +2,31 @@
   "zh": [
     "书写“{text_all}”。",
     "渲染“{text_all}”。",
-    "生成“{text_all}”。"
+    "生成“{text_all}”。",
+    "创作“{text_all}”。",
+    "显示“{text_all}”。",
+    "输出“{text_all}”。",
+    "排版“{text_all}”。",
+    "呈现“{text_all}”。",
+    "构建“{text_all}”。",
+    "撰写“{text_all}”。",
+    "记录“{text_all}”。",
+    "拟定“{text_all}”。",
+    "罗列“{text_all}”。",
+    "详述“{text_all}”。"
   ],
   "en": [
     "Writing \"{text_all}\".",
     "Rendering \"{text_all}\".",
-    "Generating \"{text_all}\"."
+    "Generating \"{text_all}\".",
+    "Creating \"{text_all}\".",
+    "Displaying \"{text_all}\".",
+    "Outputting \"{text_all}\".",
+    "Typesetting \"{text_all}\".",
+    "Presenting \"{text_all}\".",
+    "Constructing \"{text_all}\".",
+    "Processing \"{text_all}\".",
+    "Drafting \"{text_all}\".",
+    "Recording \"{text_all}\"."
   ]
 }
