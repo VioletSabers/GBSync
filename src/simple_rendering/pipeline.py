@@ -630,7 +630,7 @@ def _build_caption_L3(
                 out_zh.append(_pick("zh", "effect_shadow"))
                 out_en.append(_pick("en", "effect_shadow"))
 
-    return "\n".join(out_zh), "\n".join(out_en)
+    return "".join(out_zh), "".join(out_en)
 
 
 def _build_caption_L4(
@@ -740,7 +740,7 @@ def _build_caption_L4(
             out_zh.append(_pick("zh", "line_desc").replace("{line_no}", str(i)).replace("{line_text}", line_t))
             out_en.append(_pick("en", "line_desc").replace("{line_no}", str(i)).replace("{line_text}", line_t))
 
-    return "\n".join(out_zh), "\n".join(out_en)
+    return "".join(out_zh), "".join(out_en)
 
 
 def _textbbox_for_placed(draw: ImageDraw.ImageDraw, placed) -> Tuple[float, float, float, float]:
