@@ -3,3 +3,4 @@ pyarrow
 fonttools
 pyyaml
 tqdm
+openpyxl

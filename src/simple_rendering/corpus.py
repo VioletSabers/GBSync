@@ -220,7 +220,9 @@ def build_inline_emoji_segments_from_pools(
             )
             units = units_by_source[source_path]
             raw_unit = str(rng.choice(units))
-            piece = normalize_english_corpus_unit(raw_unit) if corpus_type == "english" else raw_unit.strip()
+            if not raw_unit.strip():
+                continue
+            piece = normalize_english_corpus_unit(raw_unit) if corpus_type == "english" else raw_unit
             output.append(
                 CorpusItem(
                     content=piece,
@@ -533,8 +535,7 @@ def _read_jsonl_source(source: CorpusSource, source_path: Path) -> List[CorpusIt
             content = payload.get("content")
             if not isinstance(content, str):
                 continue
-            content = content.strip()
-            if not content:
+            if not content.strip():
                 continue
             if source.corpus_type == "english":
                 content = normalize_english_corpus_unit(content)

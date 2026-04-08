@@ -1816,7 +1816,7 @@ def _build_parquet_row(
     )
     # Store as Python literal string so booleans stay True/False for eval-based consumers.
     # str(list[dict]) also keeps emoji as UTF-8 characters instead of \\U... escapes.
-    content_dict = str(content_list)
+    content_dict = json.dumps(content_list, ensure_ascii=False)
     ocr_attribute = json.dumps(ocr_rows, ensure_ascii=False)
     return {
         "ID": image_id,
@@ -2987,8 +2987,8 @@ def _sample_units_to_target_length(
     while cur_cn < target_len and guard_cn < 4096:
         guard_cn += 1
         source = _pick_source_path_for_pipeline(units_by_source, source_sampling_weights, rng)
-        unit = str(rng.choice(list(units_by_source[source]))).strip()
-        if not unit:
+        unit = str(rng.choice(list(units_by_source[source])))
+        if not unit.strip():
             continue
         if cur_cn + len(unit) < target_len:
             units_cn.append(unit)
