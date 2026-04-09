@@ -577,6 +577,7 @@ def _pick_microsoft_yahei_fallback(
             candidates.append(resolved)
     local_common = (config_dir / "../../font/common").resolve()
     extra = [
+        local_common / "BabelStoneHan.ttf",
         local_common / "MicrosoftYaHei.ttf",
         local_common / "msyh.ttc",
         local_common / "msyh.ttf",

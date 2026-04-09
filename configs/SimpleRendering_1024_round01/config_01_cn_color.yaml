@@ -9,7 +9,7 @@ caption_templates_L4_path: ../templates/caption_templates_L4.json
 # Optional fallback fonts:
 # - Chinese fallback (recommended Microsoft YaHei)
 # - Special symbol fallback
-# fallback_chinese_font_path: ../../font/common/MicrosoftYaHei.ttf
+fallback_chinese_font_path: ../../font/common/BabelStoneHan.ttf
 # fallback_symbol_font_path: /System/Library/Fonts/Apple Symbols.ttf
 color_map_json: ../templates/color_map.json
 canvas:
