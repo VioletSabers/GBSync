@@ -1,0 +1,99 @@
+# 仅使用生僻字语料库（sample_data/chinese_rare_chars_supplement_one_per_line.jsonl）的冒烟测试配置。
+# 生成少量样本验证 BabelStoneHan 等保底字体能否渲染。
+#
+# 运行（仓库根目录）:
+#   python scripts/generate_dataset.py --config configs/SimpleRendering_1024_round01/config_rare_chars_corpus_only_test.yaml
+
+seed: 20260410
+parallel_workers: 1
+num_rounds: 1
+samples_per_round: 5
+caption_templates_L1_path: ../templates/caption_templates_L1.json
+caption_templates_L2_path: ../templates/caption_templates_L2.json
+caption_templates_L3_path: ../templates/caption_templates_L3.json
+caption_templates_L4_path: ../templates/caption_templates_L4.json
+fallback_chinese_font_path: ../../font/common/BabelStoneHan.ttf
+color_map_json: ../templates/color_map.json
+canvas:
+  width: 1024
+  height: 1024
+  min_width: 1024
+  max_width: 1024
+  min_height: 1024
+  max_height: 1024
+  short_edge_min: 1024
+  short_edge_max: 1024
+  aspect_ratios:
+  - '1:1'
+  margin: 48
+  min_text_bg_contrast_ratio: 4.0
+  background_colors:
+  - '#FFFFFF'
+  - '#111111'
+text:
+  max_font_size: 64
+  min_font_size: 24
+  line_spacing: 12
+  paragraph_spacing: 64
+  min_segments_per_image: 1
+  max_segments_per_image: 4
+  min_corpus_units_per_segment: 2
+  max_corpus_units_per_segment: 6
+  emoji_insert_probability: 0.0
+  no_emoji_image_probability: 1.0
+  min_emojis_between_segments: 0
+  max_emojis_between_segments: 0
+  layout_modes:
+  - full_text
+  layout_mode_weights:
+    full_text: 1.0
+  layout_variants_by_mode:
+    full_text:
+    - middle_center
+  default_text_colors:
+  - '#000000'
+  - '#FFFFFF'
+  chinese_min_length: 24
+  chinese_max_length: 72
+  english_min_length: 80
+  english_max_length: 320
+  title_corpus_units_min: 1
+  title_corpus_units_max: 3
+  min_lines_cap_per_segment: 3
+  max_lines_cap_per_segment: 8
+output:
+  root_dir: ../../output/SimpleRendering_rare_chars_corpus_only_test
+  image_dir: images
+  parquet_dir: parquet
+  relative_img_path_prefix: easy_rendering/rare_chars_test/images
+corpus_sources:
+- path: ../../sample_data/chinese_rare_chars_supplement_one_per_line.jsonl
+  corpus_type: chinese
+  sample_weight: 1.0
+title_corpus_sources:
+- path: ../../sample_data/chinese_rare_chars_supplement_one_per_line.jsonl
+  corpus_type: chinese
+  sample_weight: 1.0
+font_category: simple
+fonts_by_corpus_by_category:
+  simple:
+    chinese:
+    - ../../font/common/NotoSansSC.ttf
+    - ../../font/common/NotoSerifSC.ttf
+    - ../../font/common/ZCOOLXiaoWei.ttf
+    english:
+    - ../../font/common/Roboto.ttf
+    emoji:
+    - /System/Library/Fonts/Apple Color Emoji.ttc
+    line_break:
+    - ../../font/common/Roboto.ttf
+colors_by_corpus:
+  chinese:
+  - '#111111'
+  - '#F8FAFC'
+  english:
+  - '#60A5FA'
+  emoji:
+  - '#FFFFFF'
+  line_break:
+  - '#FFFFFF'
